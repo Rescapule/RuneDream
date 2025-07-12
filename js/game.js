@@ -16,8 +16,8 @@ let towers = {
 let enemies = [];
 let startTime = Date.now();
 let gameOver = false;
-let spawnInterval;
 let tickInterval;
+let nextSpawn = 0;
 
 function randElement(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -66,7 +66,12 @@ function drawRune(rune, x, y) {
 function createEnemy() {
   const rune = createRune();
   const lane = Math.random() < 0.5 ? 150 : 250;
-  return { ...rune, x: 0, y: lane, hp: 100 };
+  const elapsed = (Date.now() - startTime) / 60000;
+  const strongChance = Math.min(0.5, elapsed * 0.1);
+  const baseHP = 100 + elapsed * 20;
+  const hp = Math.random() < strongChance ? baseHP * 2 : baseHP;
+  const speed = 0.5 + elapsed * 0.05;
+  return { ...rune, x: 0, y: lane, hp, speed };
 }
 
 function spawnEnemy() {
@@ -81,7 +86,9 @@ function drawEnemies() {
 
 function updateEnemies() {
   enemies.forEach(e => {
-    e.x += 0.5; // speed
+    let speed = e.speed || 0.5;
+    if (e.slow) speed *= e.slow;
+    e.x += speed;
     if (e.x > 700) {
       endGame('Defeat');
     }
@@ -155,9 +162,15 @@ function gameTick() {
   drawTowers();
   updateEnemies();
   updateTowers();
-  const time = Date.now() - startTime;
-  timerEl.textContent = `Time: ${(time/1000).toFixed(1)}`;
-  if (time >= GAME_TIME) {
+  const elapsed = Date.now() - startTime;
+  if (elapsed >= nextSpawn) {
+    spawnEnemy();
+    const minutes = Math.floor(elapsed / 60000);
+    const delay = Math.max(500, 2000 - minutes * 200);
+    nextSpawn = elapsed + delay;
+  }
+  timerEl.textContent = `Time: ${(elapsed/1000).toFixed(1)}`;
+  if (elapsed >= GAME_TIME) {
     endGame('Victory');
   }
 }
@@ -166,8 +179,10 @@ function endGame(msg) {
   if (gameOver) return;
   gameOver = true;
   statusEl.textContent = msg;
-  clearInterval(spawnInterval);
   clearInterval(tickInterval);
+  document.getElementById('start-btn').classList.remove('hidden');
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('info').classList.add('hidden');
 }
 
 function setupRunes() {
@@ -240,6 +255,20 @@ document.querySelectorAll('.droppable').forEach(el => {
 runeStackEl.addEventListener('dragover', allowDrop);
 runeStackEl.addEventListener('drop', discardRune);
 
-setupRunes();
-spawnInterval = setInterval(spawnEnemy, 2000);
-tickInterval = setInterval(gameTick, 50);
+function startGame() {
+  runes = [];
+  towers = { left: null, right: null };
+  enemies = [];
+  gameOver = false;
+  statusEl.textContent = '';
+  document.getElementById('game').classList.remove('hidden');
+  document.getElementById('info').classList.remove('hidden');
+  document.getElementById('start-btn').classList.add('hidden');
+  startTime = Date.now();
+  nextSpawn = 0;
+  setupRunes();
+  if (tickInterval) clearInterval(tickInterval);
+  tickInterval = setInterval(gameTick, 50);
+}
+
+document.getElementById('start-btn').addEventListener('click', startGame);
