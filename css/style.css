@@ -1,6 +1,6 @@
 body {
     font-family: sans-serif;
-    background: #222;
+    background: #111;
     color: #eee;
     text-align: center;
 }
@@ -12,6 +12,7 @@ body {
 }
 
 #board {
+    background: #000;
     position: relative;
 }
 
@@ -22,6 +23,7 @@ body {
     border: 2px dashed #666;
     position: absolute;
     top: 150px;
+    z-index: 2;
 }
 
 #left-circle {
@@ -33,30 +35,45 @@ body {
 
 #rune-stack {
     width: 80px;
+    height: 80px;
+    background: #777;
+    border-radius: 50%;
+    position: relative;
     display: flex;
     flex-direction: column-reverse;
     align-items: center;
-    height: 400px;
+    justify-content: center;
 }
 
 .rune {
     width: 60px;
     height: 60px;
-    margin: 5px 0;
+    margin: 2px 0;
     cursor: grab;
     display: flex;
     justify-content: center;
     align-items: center;
+    border: 2px solid #000;
 }
 
 .rune.hidden {
-    visibility: hidden;
+    display: none;
 }
 
 canvas {
+    background: #111;
     border: 1px solid #444;
 }
 
 #info {
     margin-top: 10px;
+}
+
+#start-btn {
+    margin-bottom: 10px;
+    padding: 5px 10px;
+}
+
+.hidden {
+    display: none;
 }
