@@ -63,19 +63,41 @@ function drawRune(rune, x, y) {
   ctx.restore();
 }
 
+function drawBoard() {
+  ctx.save();
+  ctx.strokeStyle = '#0ff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(150, 0);
+  ctx.lineTo(150, 200);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#ff0';
+  ctx.beginPath();
+  ctx.moveTo(650, 0);
+  ctx.lineTo(650, 200);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function createEnemy() {
   const rune = createRune();
-  const lane = Math.random() < 0.5 ? 150 : 250;
+  const lane = Math.random() < 0.5 ? 150 : 650;
   const elapsed = (Date.now() - startTime) / 60000;
   const strongChance = Math.min(0.5, elapsed * 0.1);
   const baseHP = 100 + elapsed * 20;
   const hp = Math.random() < strongChance ? baseHP * 2 : baseHP;
-  const speed = 0.5 + elapsed * 0.05;
-  return { ...rune, x: 0, y: lane, hp, speed };
+  const speed = 0.2 + elapsed * 0.03;
+  return { ...rune, x: lane, y: 0, hp, speed };
 }
 
 function spawnEnemy() {
-  enemies.push(createEnemy());
+  const batchSize = 5;
+  for (let i = 0; i < batchSize; i++) {
+    const e = createEnemy();
+    e.y -= i * 20;
+    enemies.push(e);
+  }
 }
 
 function drawEnemies() {
@@ -86,14 +108,14 @@ function drawEnemies() {
 
 function updateEnemies() {
   enemies.forEach(e => {
-    let speed = e.speed || 0.5;
+    let speed = e.speed || 0.3;
     if (e.slow) speed *= e.slow;
-    e.x += speed;
-    if (e.x > 700) {
+    e.y += speed;
+    if (e.y > 200) {
       endGame('Defeat');
     }
   });
-  enemies = enemies.filter(e => e.hp > 0 && e.x <= 700);
+  enemies = enemies.filter(e => e.hp > 0 && e.y <= 200);
 }
 
 function drawTowers() {
@@ -158,6 +180,7 @@ function removeTower(pos) {
 
 function gameTick() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBoard();
   drawEnemies();
   drawTowers();
   updateEnemies();
