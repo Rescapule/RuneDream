@@ -109,14 +109,14 @@ function init() {
 
 function handleInput(e) {
   if (!GAME.player.alive) return;
-  if (e.code === 'ArrowUp') {
+  if (e.code === 'ArrowUp' || e.code === 'Space') {
     if (GAME.player.jumpCharges > 0) {
       GAME.player.vy = -12;
       GAME.player.jumpCharges--;
       sounds.jumpSfx.currentTime = 0;
       sounds.jumpSfx.play();
     }
-  } else if (e.code === 'ArrowRight') {
+  } else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyX') {
     if (GAME.player.dash <= 0 && GAME.player.dashCharges > 0) {
       GAME.player.dash = 15;
       GAME.player.dashCharges--;
