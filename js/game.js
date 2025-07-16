@@ -1,297 +1,187 @@
-const canvas = document.getElementById('game-canvas');
+const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const runeStackEl = document.getElementById('rune-stack');
-const timerEl = document.getElementById('timer');
-const statusEl = document.getElementById('status');
+const distanceEl = document.getElementById('distance');
+const coinsEl = document.getElementById('coins');
 
-const GAME_TIME = 5 * 60 * 1000; // 5 minutes
-const COLORS = ['red', 'blue', 'yellow', 'green'];
-const SHAPES = ['circle', 'square', 'triangle', 'diamond'];
-
-let runes = [];
-let towers = {
-  left: null,
-  right: null,
+const ASSETS = {
+  run: [
+    'RuneDreamAssets/sprite_run_1.png',
+    'RuneDreamAssets/sprite_run_2.png',
+    'RuneDreamAssets/sprite_run_3.png',
+    'RuneDreamAssets/sprite_run_4.png',
+    'RuneDreamAssets/sprite_run_5.png'
+  ],
+  dash: 'RuneDreamAssets/sprite_dash_1.png',
+  plat: 'RuneDreamAssets/plat_clouds1.png',
+  orange: 'RuneDreamAssets/Obs_orangestar.png',
+  orangeBreak: 'RuneDreamAssets/Obs_orangestar_break.png',
+  black: 'RuneDreamAssets/Obs_blackstar.png'
 };
-let enemies = [];
-let startTime = Date.now();
-let gameOver = false;
-let tickInterval;
-let nextSpawn = 0;
 
-function randElement(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+const images = {};
+let loaded = 0;
+let total = ASSETS.run.length + 4;
+
+function loadImages(cb) {
+  [...ASSETS.run, ASSETS.dash, ASSETS.plat, ASSETS.orange, ASSETS.black].forEach(src => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => {
+      loaded++;
+      if (loaded === total) cb();
+    };
+    images[src] = img;
+  });
 }
 
-function createRune() {
-  const color = randElement(COLORS);
-  const shape = randElement(SHAPES);
-  return { color, shape };
-}
+const GAME = {
+  speed: 4,
+  gravity: 0.5,
+  player: {
+    x: 100,
+    y: 0,
+    vy: 0,
+    width: 64,
+    height: 64,
+    frame: 0,
+    frameTime: 0,
+    dash: 0,
+    coins: 0,
+    alive: true
+  },
+  ground: [],
+  obstacles: [],
+  distance: 0
+};
 
-function drawRune(rune, x, y) {
-  ctx.save();
-  ctx.fillStyle = rune.color;
-  ctx.translate(x, y);
-  switch (rune.shape) {
-    case 'circle':
-      ctx.beginPath();
-      ctx.arc(0, 0, 10, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-    case 'square':
-      ctx.fillRect(-10, -10, 20, 20);
-      break;
-    case 'triangle':
-      ctx.beginPath();
-      ctx.moveTo(0, -12);
-      ctx.lineTo(10, 10);
-      ctx.lineTo(-10, 10);
-      ctx.closePath();
-      ctx.fill();
-      break;
-    case 'diamond':
-      ctx.beginPath();
-      ctx.moveTo(0, -12);
-      ctx.lineTo(12, 0);
-      ctx.lineTo(0, 12);
-      ctx.lineTo(-12, 0);
-      ctx.closePath();
-      ctx.fill();
-      break;
+function init() {
+  canvas.width = 800;
+  canvas.height = 450;
+  GAME.player.y = canvas.height - 100;
+  for (let i = 0; i < 10; i++) {
+    addGround(i * 160);
   }
-  ctx.restore();
+  window.addEventListener('keydown', handleInput);
+  window.requestAnimationFrame(loop);
 }
 
-function drawBoard() {
-  ctx.save();
-  ctx.strokeStyle = '#0ff';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(150, 0);
-  ctx.lineTo(150, 200);
-  ctx.stroke();
-
-  ctx.strokeStyle = '#ff0';
-  ctx.beginPath();
-  ctx.moveTo(650, 0);
-  ctx.lineTo(650, 200);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function createEnemy() {
-  const rune = createRune();
-  const lane = Math.random() < 0.5 ? 150 : 650;
-  const elapsed = (Date.now() - startTime) / 60000;
-  const strongChance = Math.min(0.5, elapsed * 0.1);
-  const baseHP = 100 + elapsed * 20;
-  const hp = Math.random() < strongChance ? baseHP * 2 : baseHP;
-  const speed = 0.2 + elapsed * 0.03;
-  return { ...rune, x: lane, y: 0, hp, speed };
-}
-
-function spawnEnemy() {
-  const batchSize = 5;
-  for (let i = 0; i < batchSize; i++) {
-    const e = createEnemy();
-    e.y -= i * 20;
-    enemies.push(e);
-  }
-}
-
-function drawEnemies() {
-  enemies.forEach(e => {
-    drawRune(e, e.x, e.y);
-  });
-}
-
-function updateEnemies() {
-  enemies.forEach(e => {
-    let speed = e.speed || 0.3;
-    if (e.slow) speed *= e.slow;
-    e.y += speed;
-    if (e.y > 200) {
-      endGame('Defeat');
+function handleInput(e) {
+  if (!GAME.player.alive) return;
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    if (onGround()) {
+      GAME.player.vy = -12;
     }
-  });
-  enemies = enemies.filter(e => e.hp > 0 && e.y <= 200);
-}
-
-function drawTowers() {
-  ['left', 'right'].forEach(pos => {
-    const t = towers[pos];
-    if (!t) return;
-    drawRune(t.runes[0], t.x, t.y);
-    if (t.runes[1]) {
-      ctx.globalAlpha = 0.5;
-      drawRune(t.runes[1], t.x + 15, t.y - 15);
-      ctx.globalAlpha = 1;
-    }
-  });
-}
-
-function shootFromTower(tower) {
-  if (tower.ammo <= 0) return;
-  const target = enemies.reduce((acc, e) => {
-    const dist = Math.hypot(e.x - tower.x, e.y - tower.y);
-    if (dist < acc.dist) {
-      return { enemy: e, dist };
-    }
-    return acc;
-  }, { enemy: null, dist: Infinity }).enemy;
-
-  if (target) {
-    ctx.strokeStyle = tower.runes.map(r => r.color).join('');
-    ctx.beginPath();
-    ctx.moveTo(tower.x, tower.y);
-    ctx.lineTo(target.x, target.y);
-    ctx.stroke();
-    let dmg = 10;
-    if (tower.runes.some(r => r.color === 'red')) dmg += 5;
-    if (tower.runes.some(r => r.color === target.color)) dmg *= 0.5;
-    target.hp -= dmg;
-    if (tower.runes.some(r => r.color === 'blue')) target.slow = 0.5;
-    tower.ammo--;
-    if (tower.ammo <= 0) {
-      removeTower(tower.position);
+  } else if (e.code === 'ShiftLeft' || e.code === 'KeyX') {
+    if (GAME.player.dash <= 0) {
+      GAME.player.dash = 15;
     }
   }
 }
 
-function updateTowers() {
-  ['left', 'right'].forEach(pos => {
-    const t = towers[pos];
-    if (!t) return;
-    if (!t.cool || Date.now() - t.cool > (towerHasColor(t, 'yellow') ? 300 : 600)) {
-      shootFromTower(t);
-      t.cool = Date.now();
+function onGround() {
+  return GAME.player.y >= canvas.height - 100;
+}
+
+function addGround(x) {
+  const rungs = [canvas.height - 50, canvas.height - 100, canvas.height - 150];
+  GAME.ground.push({ x, y: rungs[Math.floor(Math.random() * rungs.length)], width: 160 });
+}
+
+function addObstacle(x) {
+  const type = Math.random() < 0.2 ? 'black' : 'orange';
+  const y = canvas.height - 110;
+  GAME.obstacles.push({ x, y, type, hit: false });
+}
+
+function update() {
+  if (!GAME.player.alive) return;
+  GAME.distance += GAME.speed;
+  distanceEl.textContent = Math.floor(GAME.distance / 10) + 'm';
+  coinsEl.textContent = GAME.player.coins;
+
+  GAME.player.vy += GAME.gravity;
+  GAME.player.y += GAME.player.vy;
+  if (GAME.player.y > canvas.height - 100) {
+    GAME.player.y = canvas.height - 100;
+    GAME.player.vy = 0;
+  }
+
+  if (GAME.player.dash > 0) {
+    GAME.player.dash--;
+  }
+
+  // move ground and obstacles
+  GAME.ground.forEach(g => g.x -= GAME.speed + (GAME.player.dash > 0 ? 4 : 0));
+  GAME.obstacles.forEach(o => o.x -= GAME.speed + (GAME.player.dash > 0 ? 4 : 0));
+
+  // remove offscreen
+  if (GAME.ground[0].x + GAME.ground[0].width < 0) {
+    GAME.ground.shift();
+    addGround(GAME.ground[GAME.ground.length-1].x + 160);
+    if (Math.random() < 0.5) addObstacle(canvas.width + 100);
+  }
+  if (GAME.obstacles.length && GAME.obstacles[0].x < -50) {
+    GAME.obstacles.shift();
+  }
+
+  // collision
+  GAME.obstacles.forEach(o => {
+    if (o.hit) return;
+    const px = GAME.player.x + (GAME.player.dash > 0 ? 32 : 0);
+    const py = GAME.player.y;
+    if (px < o.x + 32 && px + 32 > o.x && py < o.y + 32 && py + 32 > o.y) {
+      if (o.type === 'orange' && GAME.player.dash > 0) {
+        o.hit = true;
+        GAME.player.coins += 5;
+      } else {
+        GAME.player.alive = false;
+      }
     }
   });
 }
 
-function towerHasColor(tower, color) {
-  return tower.runes.some(r => r.color === color);
-}
-
-function removeTower(pos) {
-  towers[pos] = null;
-}
-
-function gameTick() {
+function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBoard();
-  drawEnemies();
-  drawTowers();
-  updateEnemies();
-  updateTowers();
-  const elapsed = Date.now() - startTime;
-  if (elapsed >= nextSpawn) {
-    spawnEnemy();
-    const minutes = Math.floor(elapsed / 60000);
-    const delay = Math.max(500, 2000 - minutes * 200);
-    nextSpawn = elapsed + delay;
-  }
-  timerEl.textContent = `Time: ${(elapsed/1000).toFixed(1)}`;
-  if (elapsed >= GAME_TIME) {
-    endGame('Victory');
-  }
-}
+  // background gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, '#89ABE3');
+  grad.addColorStop(1, '#F0F8FF');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-function endGame(msg) {
-  if (gameOver) return;
-  gameOver = true;
-  statusEl.textContent = msg;
-  clearInterval(tickInterval);
-  document.getElementById('start-btn').classList.remove('hidden');
-  document.getElementById('game').classList.add('hidden');
-  document.getElementById('info').classList.add('hidden');
-}
-
-function setupRunes() {
-  for (let i = 0; i < 5; i++) runes.push(createRune());
-  renderRuneStack();
-}
-
-function renderRuneStack() {
-  runeStackEl.innerHTML = '';
-  runes.forEach((r, idx) => {
-    const div = document.createElement('div');
-    div.className = 'rune';
-    if (idx !== runes.length - 1) div.classList.add('hidden');
-    div.style.background = r.color;
-    div.dataset.index = idx;
-    div.draggable = idx === runes.length - 1;
-    div.addEventListener('dragstart', dragRune);
-    runeStackEl.appendChild(div);
+  // ground
+  GAME.ground.forEach(g => {
+    ctx.drawImage(images[ASSETS.plat], g.x, g.y, g.width, 32);
   });
-}
 
-function dragRune(e) {
-  e.dataTransfer.setData('text/plain', e.target.dataset.index);
-}
+  // obstacles
+  GAME.obstacles.forEach(o => {
+    if (o.hit && o.type === 'orange') {
+      ctx.drawImage(images[ASSETS.orangeBreak], o.x, o.y, 32, 32);
+    } else {
+      ctx.drawImage(images[o.type === 'orange' ? ASSETS.orange : ASSETS.black], o.x, o.y, 32, 32);
+    }
+  });
 
-function allowDrop(e) {
-  e.preventDefault();
-}
-
-function dropRune(e) {
-  e.preventDefault();
-  const idx = +e.dataTransfer.getData('text/plain');
-  if (idx !== runes.length - 1) return; // only top
-  const rune = runes.pop();
-  const pos = e.target.id === 'left-circle' ? 'left' : 'right';
-  placeRuneOnTower(rune, pos);
-  runes.push(createRune());
-  renderRuneStack();
-}
-
-function placeRuneOnTower(rune, pos) {
-  const existing = towers[pos];
-  if (!existing) {
-    towers[pos] = { position: pos, x: pos === 'left' ? 150 : 650, y: 200, runes: [rune], ammo: 20 };
-    return;
+  // player
+  let sprite;
+  if (GAME.player.dash > 0) {
+    sprite = images[ASSETS.dash];
+  } else {
+    sprite = images[ASSETS.run[GAME.player.frame]];
+    GAME.player.frameTime++;
+    if (GAME.player.frameTime > 5) {
+      GAME.player.frame = (GAME.player.frame + 1) % ASSETS.run.length;
+      GAME.player.frameTime = 0;
+    }
   }
-  if (existing.runes.some(r => r.color === rune.color && r.shape === rune.shape)) {
-    // destroy tower
-    towers[pos] = null;
-    return;
-  }
-  existing.runes.push(rune);
-  if (existing.runes.length > 2) existing.runes.shift();
-  existing.ammo = 20;
+  ctx.drawImage(sprite, GAME.player.x, GAME.player.y - GAME.player.height + 10, GAME.player.width, GAME.player.height);
 }
 
-function discardRune(e) {
-  e.preventDefault();
-  const idx = +e.dataTransfer.getData('text/plain');
-  if (idx !== runes.length - 1) return;
-  runes.pop();
-  runes.push(createRune());
-  renderRuneStack();
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
 }
 
-document.querySelectorAll('.droppable').forEach(el => {
-  el.addEventListener('dragover', allowDrop);
-  el.addEventListener('drop', dropRune);
-});
-runeStackEl.addEventListener('dragover', allowDrop);
-runeStackEl.addEventListener('drop', discardRune);
-
-function startGame() {
-  runes = [];
-  towers = { left: null, right: null };
-  enemies = [];
-  gameOver = false;
-  statusEl.textContent = '';
-  document.getElementById('game').classList.remove('hidden');
-  document.getElementById('info').classList.remove('hidden');
-  document.getElementById('start-btn').classList.add('hidden');
-  startTime = Date.now();
-  nextSpawn = 0;
-  setupRunes();
-  if (tickInterval) clearInterval(tickInterval);
-  tickInterval = setInterval(gameTick, 50);
-}
-
-document.getElementById('start-btn').addEventListener('click', startGame);
+loadImages(init);
