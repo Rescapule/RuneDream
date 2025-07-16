@@ -15,12 +15,16 @@ const ASSETS = {
   plat: 'RuneDreamAssets/plat_clouds1.png',
   orange: 'RuneDreamAssets/Obs_orangestar.png',
   orangeBreak: 'RuneDreamAssets/Obs_orangestar_break.png',
-  black: 'RuneDreamAssets/Obs_blackstar.png'
+  black: 'RuneDreamAssets/Obs_blackstar.png',
+  jumpSfx: 'RuneDreamAssets/jump.wav',
+  dashSfx: 'RuneDreamAssets/dash.wav',
+  breakSfx: 'RuneDreamAssets/break.wav'
 };
 
 const images = {};
+const sounds = {};
 let loaded = 0;
-let total = ASSETS.run.length + 4;
+let total = ASSETS.run.length + 7;
 
 function loadImages(cb) {
   [...ASSETS.run, ASSETS.dash, ASSETS.plat, ASSETS.orange, ASSETS.black].forEach(src => {
@@ -32,6 +36,36 @@ function loadImages(cb) {
     };
     images[src] = img;
   });
+  ['jumpSfx', 'dashSfx', 'breakSfx'].forEach(key => {
+    const audio = new Audio(ASSETS[key]);
+    sounds[key] = audio;
+    audio.addEventListener('canplaythrough', () => {
+      loaded++;
+      if (loaded === total) cb();
+    });
+  });
+}
+
+function isPixelCollision(img1, x1, y1, w1, h1, img2, x2, y2, w2, h2) {
+  const w = Math.min(x1 + w1, x2 + w2) - Math.max(x1, x2);
+  const h = Math.min(y1 + h1, y2 + h2) - Math.max(y1, y2);
+  if (w <= 0 || h <= 0) return false;
+  const canvas1 = document.createElement('canvas');
+  canvas1.width = w;
+  canvas1.height = h;
+  const c1 = canvas1.getContext('2d');
+  c1.drawImage(img1, x1 - Math.max(x1, x2), y1 - Math.max(y1, y2));
+  const data1 = c1.getImageData(0, 0, w, h).data;
+  const canvas2 = document.createElement('canvas');
+  canvas2.width = w;
+  canvas2.height = h;
+  const c2 = canvas2.getContext('2d');
+  c2.drawImage(img2, x2 - Math.max(x1, x2), y2 - Math.max(y1, y2), w2, h2);
+  const data2 = c2.getImageData(0, 0, w, h).data;
+  for (let i = 3; i < data1.length; i += 4) {
+    if (data1[i] !== 0 && data2[i] !== 0) return true;
+  }
+  return false;
 }
 
 const GAME = {
@@ -46,20 +80,28 @@ const GAME = {
     frame: 0,
     frameTime: 0,
     dash: 0,
+    dashCharges: 2,
+    jumpCharges: 2,
     coins: 0,
     alive: true
   },
   ground: [],
   obstacles: [],
-  distance: 0
+  distance: 0,
+  gameOverHandled: false
 };
 
 function init() {
   canvas.width = 800;
   canvas.height = 450;
   GAME.player.y = canvas.height - 100;
+  GAME.player.jumpCharges = 2;
+  GAME.player.dashCharges = 2;
+  let x = 0;
   for (let i = 0; i < 10; i++) {
-    addGround(i * 160);
+    addGround(x);
+    const last = GAME.ground[GAME.ground.length-1];
+    x = last.x + last.width + last.gap;
   }
   window.addEventListener('keydown', handleInput);
   window.requestAnimationFrame(loop);
@@ -67,29 +109,45 @@ function init() {
 
 function handleInput(e) {
   if (!GAME.player.alive) return;
-  if (e.code === 'Space' || e.code === 'ArrowUp') {
-    if (onGround()) {
+  if (e.code === 'ArrowUp') {
+    if (GAME.player.jumpCharges > 0) {
       GAME.player.vy = -12;
+      GAME.player.jumpCharges--;
+      sounds.jumpSfx.currentTime = 0;
+      sounds.jumpSfx.play();
     }
-  } else if (e.code === 'ShiftLeft' || e.code === 'KeyX') {
-    if (GAME.player.dash <= 0) {
+  } else if (e.code === 'ArrowRight') {
+    if (GAME.player.dash <= 0 && GAME.player.dashCharges > 0) {
       GAME.player.dash = 15;
+      GAME.player.dashCharges--;
+      sounds.dashSfx.currentTime = 0;
+      sounds.dashSfx.play();
     }
   }
 }
 
+function getGroundLevel(px) {
+  for (let g of GAME.ground) {
+    if (px >= g.x && px <= g.x + g.width) {
+      return g.y;
+    }
+  }
+  return canvas.height;
+}
+
 function onGround() {
-  return GAME.player.y >= canvas.height - 100;
+  return GAME.player.y >= getGroundLevel(GAME.player.x + GAME.player.width / 2) - 10;
 }
 
 function addGround(x) {
-  const rungs = [canvas.height - 50, canvas.height - 100, canvas.height - 150];
-  GAME.ground.push({ x, y: rungs[Math.floor(Math.random() * rungs.length)], width: 160 });
+  const rungs = [canvas.height - 80, canvas.height - 200, canvas.height - 320];
+  const gap = 40 + Math.random() * 40;
+  GAME.ground.push({ x, y: rungs[Math.floor(Math.random() * rungs.length)], width: 160, gap });
 }
 
 function addObstacle(x) {
   const type = Math.random() < 0.2 ? 'black' : 'orange';
-  const y = canvas.height - 110;
+  const y = getGroundLevel(x) - 96;
   GAME.obstacles.push({ x, y, type, hit: false });
 }
 
@@ -101,9 +159,12 @@ function update() {
 
   GAME.player.vy += GAME.gravity;
   GAME.player.y += GAME.player.vy;
-  if (GAME.player.y > canvas.height - 100) {
-    GAME.player.y = canvas.height - 100;
+  const groundLevel = getGroundLevel(GAME.player.x + GAME.player.width / 2) - 10;
+  if (GAME.player.y > groundLevel) {
+    GAME.player.y = groundLevel;
     GAME.player.vy = 0;
+    GAME.player.jumpCharges = 2;
+    GAME.player.dashCharges = 2;
   }
 
   if (GAME.player.dash > 0) {
@@ -117,7 +178,8 @@ function update() {
   // remove offscreen
   if (GAME.ground[0].x + GAME.ground[0].width < 0) {
     GAME.ground.shift();
-    addGround(GAME.ground[GAME.ground.length-1].x + 160);
+    const last = GAME.ground[GAME.ground.length-1];
+    addGround(last.x + last.width + last.gap);
     if (Math.random() < 0.5) addObstacle(canvas.width + 100);
   }
   if (GAME.obstacles.length && GAME.obstacles[0].x < -50) {
@@ -128,16 +190,25 @@ function update() {
   GAME.obstacles.forEach(o => {
     if (o.hit) return;
     const px = GAME.player.x + (GAME.player.dash > 0 ? 32 : 0);
-    const py = GAME.player.y;
-    if (px < o.x + 32 && px + 32 > o.x && py < o.y + 32 && py + 32 > o.y) {
+    const py = GAME.player.y - GAME.player.height + 10;
+    const playerImg = GAME.player.dash > 0 ? images[ASSETS.dash] : images[ASSETS.run[GAME.player.frame]];
+    const obsImg = images[o.type === 'orange' ? ASSETS.orange : ASSETS.black];
+    if (isPixelCollision(playerImg, px, py, GAME.player.width, GAME.player.height, obsImg, o.x, o.y, 96, 96)) {
       if (o.type === 'orange' && GAME.player.dash > 0) {
         o.hit = true;
+        sounds.breakSfx.currentTime = 0;
+        sounds.breakSfx.play();
         GAME.player.coins += 5;
       } else {
         GAME.player.alive = false;
       }
     }
   });
+
+  if (!GAME.player.alive && !GAME.gameOverHandled) {
+    GAME.gameOverHandled = true;
+    setTimeout(gameOverPrompt, 50);
+  }
 }
 
 function draw() {
@@ -157,9 +228,9 @@ function draw() {
   // obstacles
   GAME.obstacles.forEach(o => {
     if (o.hit && o.type === 'orange') {
-      ctx.drawImage(images[ASSETS.orangeBreak], o.x, o.y, 32, 32);
+      ctx.drawImage(images[ASSETS.orangeBreak], o.x, o.y, 96, 96);
     } else {
-      ctx.drawImage(images[o.type === 'orange' ? ASSETS.orange : ASSETS.black], o.x, o.y, 32, 32);
+      ctx.drawImage(images[o.type === 'orange' ? ASSETS.orange : ASSETS.black], o.x, o.y, 96, 96);
     }
   });
 
@@ -182,6 +253,40 @@ function loop() {
   update();
   draw();
   requestAnimationFrame(loop);
+}
+
+function gameOverPrompt() {
+  const spend = confirm('Spend 10 coins to continue?');
+  if (spend && GAME.player.coins >= 10) {
+    GAME.player.coins -= 10;
+    GAME.player.alive = true;
+    GAME.gameOverHandled = false;
+  } else {
+    const again = confirm('Play again?');
+    if (again) {
+      restart();
+    }
+  }
+}
+
+function restart() {
+  GAME.player.alive = true;
+  GAME.gameOverHandled = false;
+  GAME.distance = 0;
+  GAME.player.coins = 0;
+  GAME.player.x = 100;
+  GAME.player.vy = 0;
+  GAME.player.jumpCharges = 2;
+  GAME.player.dashCharges = 2;
+  GAME.ground = [];
+  GAME.obstacles = [];
+  let x = 0;
+  for (let i = 0; i < 10; i++) {
+    addGround(x);
+    const last = GAME.ground[GAME.ground.length-1];
+    x = last.x + last.width + last.gap;
+  }
+  GAME.player.y = getGroundLevel(GAME.player.x) - 10;
 }
 
 loadImages(init);
