@@ -1,26 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rune Dream</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuneDream</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <h1>Rune Dream</h1>
-    <button id="start-btn">Start Game</button>
-    <div id="game" class="hidden">
-        <div id="board">
-            <div id="left-circle" class="circle droppable"></div>
-            <div id="right-circle" class="circle droppable"></div>
-            <canvas id="game-canvas" width="800" height="400"></canvas>
-        </div>
-        <div id="rune-stack"></div>
-    </div>
-    <div id="info" class="hidden">
-        <span id="timer">Time: 0</span>
-        <span id="status"></span>
-    </div>
-    <script src="js/game.js"></script>
+  <canvas id="gameCanvas" width="800" height="450"></canvas>
+  <div id="hud">
+    <span id="distance">0m</span>
+    <span id="coins">0</span>
+  </div>
+  <script src="js/game.js"></script>
 </body>
 </html>
