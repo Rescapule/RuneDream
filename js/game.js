@@ -128,14 +128,14 @@ function onGround() {
 
 function addGround(x) {
   const rungs = [canvas.height - 80, canvas.height - 200, canvas.height - 320];
-  const gap = 40 + Math.random() * 40;
+  const gap = 80 + Math.random() * 80;
   GAME.ground.push({ x, y: rungs[Math.floor(Math.random() * rungs.length)], width: 160, gap });
 }
 
 function addObstacle(x) {
   const type = Math.random() < 0.2 ? 'black' : 'orange';
   const y = getGroundLevel(x) - 96;
-  GAME.obstacles.push({ x, y, type, hit: false });
+  GAME.obstacles.push({ x, y, type, hit: false, timer: 0 });
 }
 
 function update() {
@@ -144,10 +144,11 @@ function update() {
   distanceEl.textContent = Math.floor(GAME.distance / 10) + 'm';
   coinsEl.textContent = GAME.player.coins;
 
+  const prevY = GAME.player.y;
   GAME.player.vy += GAME.gravity;
   GAME.player.y += GAME.player.vy;
   const groundLevel = getGroundLevel(GAME.player.x + GAME.player.width / 2) - 10;
-  if (GAME.player.y > groundLevel) {
+  if (GAME.player.vy >= 0 && prevY <= groundLevel && GAME.player.y >= groundLevel) {
     GAME.player.y = groundLevel;
     GAME.player.vy = 0;
     GAME.player.jumpCharges = 2;
@@ -161,6 +162,18 @@ function update() {
   // move ground and obstacles
   GAME.ground.forEach(g => g.x -= GAME.speed + (GAME.player.dash > 0 ? 4 : 0));
   GAME.obstacles.forEach(o => o.x -= GAME.speed + (GAME.player.dash > 0 ? 4 : 0));
+
+  // update obstacle timers and remove exploded ones
+  GAME.obstacles = GAME.obstacles.filter(o => {
+    if (o.hit) {
+      if (o.timer > 0) {
+        o.timer--;
+        return true;
+      }
+      return false;
+    }
+    return true;
+  });
 
   // remove offscreen
   if (GAME.ground[0].x + GAME.ground[0].width < 0) {
@@ -190,6 +203,7 @@ function update() {
     ) {
       if (o.type === 'orange' && GAME.player.dash > 0) {
         o.hit = true;
+        o.timer = 10;
         GAME.player.coins += 5;
       } else {
         GAME.player.alive = false;
