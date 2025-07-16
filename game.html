@@ -13,11 +13,18 @@
       <span id="distance">0m</span>
       <span id="coins">0</span>
     </div>
+    <div id="gameOver">
+      <p>You lost!</p>
+      <button id="returnBtn">Main Menu</button>
+    </div>
   </div>
   <script src="js/game.js"></script>
   <script>
     window.addEventListener('load', () => {
       startGame();
+      document.getElementById('returnBtn').addEventListener('click', () => {
+        window.location.href = 'index.html';
+      });
     });
   </script>
 </body>

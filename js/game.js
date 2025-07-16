@@ -2,6 +2,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const distanceEl = document.getElementById('distance');
 const coinsEl = document.getElementById('coins');
+const gameOverEl = document.getElementById('gameOver');
 
 const ASSETS = {
   run: [
@@ -84,6 +85,7 @@ function init() {
   canvas.width = container.clientWidth;
   canvas.height = container.clientHeight;
   GAME.player.y = canvas.height - 100;
+  gameOverEl.style.display = 'none';
   GAME.player.jumpCharges = 2;
   GAME.player.dashCharges = 2;
   let x = 0;
@@ -178,7 +180,14 @@ function update() {
     const py = GAME.player.y - GAME.player.height + 10;
     const playerImg = GAME.player.dash > 0 ? images[ASSETS.dash] : images[ASSETS.run[GAME.player.frame]];
     const obsImg = images[o.type === 'orange' ? ASSETS.orange : ASSETS.black];
-    if (isPixelCollision(playerImg, px, py, GAME.player.width, GAME.player.height, obsImg, o.x, o.y, 96, 96)) {
+    const buffer = 10;
+    if (
+      px + buffer < o.x + 96 - buffer &&
+      px + GAME.player.width - buffer > o.x + buffer &&
+      py + buffer < o.y + 96 - buffer &&
+      py + GAME.player.height - buffer > o.y + buffer &&
+      isPixelCollision(playerImg, px, py, GAME.player.width, GAME.player.height, obsImg, o.x, o.y, 96, 96)
+    ) {
       if (o.type === 'orange' && GAME.player.dash > 0) {
         o.hit = true;
         GAME.player.coins += 5;
@@ -229,7 +238,15 @@ function draw() {
       GAME.player.frameTime = 0;
     }
   }
-  ctx.drawImage(sprite, GAME.player.x, GAME.player.y - GAME.player.height + 10, GAME.player.width, GAME.player.height);
+  if (GAME.player.dash > 0) {
+    ctx.save();
+    ctx.translate(GAME.player.x + GAME.player.width, GAME.player.y - GAME.player.height + 10);
+    ctx.scale(-1, 1);
+    ctx.drawImage(sprite, 0, 0, GAME.player.width, GAME.player.height);
+    ctx.restore();
+  } else {
+    ctx.drawImage(sprite, GAME.player.x, GAME.player.y - GAME.player.height + 10, GAME.player.width, GAME.player.height);
+  }
 }
 
 function loop() {
@@ -239,17 +256,7 @@ function loop() {
 }
 
 function gameOverPrompt() {
-  const spend = confirm('Spend 10 coins to continue?');
-  if (spend && GAME.player.coins >= 10) {
-    GAME.player.coins -= 10;
-    GAME.player.alive = true;
-    GAME.gameOverHandled = false;
-  } else {
-    const again = confirm('Play again?');
-    if (again) {
-      restart();
-    }
-  }
+  gameOverEl.style.display = 'flex';
 }
 
 function restart() {
@@ -270,6 +277,7 @@ function restart() {
     x = last.x + last.width + last.gap;
   }
   GAME.player.y = getGroundLevel(GAME.player.x) - 10;
+  gameOverEl.style.display = 'none';
 }
 
 function startGame() {

@@ -9,11 +9,15 @@
 <body>
   <div id="landing">
     <h1>RuneDream</h1>
-    <button id="startBtn">Start Game</button>
+    <button id="playBtn">Play Game</button>
+    <button id="shopBtn">Upgrade Shop</button>
   </div>
   <script>
-    document.getElementById('startBtn').addEventListener('click', () => {
-      window.open('game.html', 'RuneDreamGame', 'width=820,height=510');
+    document.getElementById('playBtn').addEventListener('click', () => {
+      window.location.href = 'game.html';
+    });
+    document.getElementById('shopBtn').addEventListener('click', () => {
+      window.location.href = 'upgrade.html';
     });
   </script>
 </body>
