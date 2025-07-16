@@ -15,16 +15,12 @@ const ASSETS = {
   plat: 'RuneDreamAssets/plat_clouds1.png',
   orange: 'RuneDreamAssets/Obs_orangestar.png',
   orangeBreak: 'RuneDreamAssets/Obs_orangestar_break.png',
-  black: 'RuneDreamAssets/Obs_blackstar.png',
-  jumpSfx: 'RuneDreamAssets/jump.wav',
-  dashSfx: 'RuneDreamAssets/dash.wav',
-  breakSfx: 'RuneDreamAssets/break.wav'
+  black: 'RuneDreamAssets/Obs_blackstar.png'
 };
 
 const images = {};
-const sounds = {};
 let loaded = 0;
-let total = ASSETS.run.length + 8;
+let total = ASSETS.run.length + 5;
 
 function loadImages(cb) {
   [...ASSETS.run, ASSETS.dash, ASSETS.plat, ASSETS.orange, ASSETS.orangeBreak, ASSETS.black].forEach(src => {
@@ -35,14 +31,6 @@ function loadImages(cb) {
       if (loaded === total) cb();
     };
     images[src] = img;
-  });
-  ['jumpSfx', 'dashSfx', 'breakSfx'].forEach(key => {
-    const audio = new Audio(ASSETS[key]);
-    sounds[key] = audio;
-    audio.addEventListener('canplaythrough', () => {
-      loaded++;
-      if (loaded === total) cb();
-    });
   });
 }
 
@@ -114,15 +102,11 @@ function handleInput(e) {
     if (GAME.player.jumpCharges > 0) {
       GAME.player.vy = -12;
       GAME.player.jumpCharges--;
-      sounds.jumpSfx.currentTime = 0;
-      sounds.jumpSfx.play();
     }
   } else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyX') {
     if (GAME.player.dash <= 0 && GAME.player.dashCharges > 0) {
       GAME.player.dash = 15;
       GAME.player.dashCharges--;
-      sounds.dashSfx.currentTime = 0;
-      sounds.dashSfx.play();
     }
   }
 }
@@ -197,8 +181,6 @@ function update() {
     if (isPixelCollision(playerImg, px, py, GAME.player.width, GAME.player.height, obsImg, o.x, o.y, 96, 96)) {
       if (o.type === 'orange' && GAME.player.dash > 0) {
         o.hit = true;
-        sounds.breakSfx.currentTime = 0;
-        sounds.breakSfx.play();
         GAME.player.coins += 5;
       } else {
         GAME.player.alive = false;
