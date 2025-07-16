@@ -69,6 +69,7 @@ const GAME = {
     frame: 0,
     frameTime: 0,
     dash: 0,
+    dashBuffer: 0,
     dashCharges: 2,
     jumpCharges: 2,
     coins: 0,
@@ -77,14 +78,16 @@ const GAME = {
   ground: [],
   obstacles: [],
   distance: 0,
-  gameOverHandled: false
+  gameOverHandled: false,
+  deathByObstacle: false
 };
 
 function init() {
   const container = document.getElementById('gameContainer');
   canvas.width = container.clientWidth;
   canvas.height = container.clientHeight;
-  GAME.player.y = canvas.height - 100;
+  GAME.player.y = canvas.height - 210;
+  GAME.deathByObstacle = false;
   gameOverEl.style.display = 'none';
   GAME.player.jumpCharges = 2;
   GAME.player.dashCharges = 2;
@@ -110,7 +113,7 @@ function handleInput(e) {
     }
   } else if (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.code === 'KeyX') {
     if (GAME.player.dash <= 0 && GAME.player.dashCharges > 0) {
-      GAME.player.dash = 15;
+      GAME.player.dash = 25;
       GAME.player.dashCharges--;
     }
   }
@@ -133,7 +136,18 @@ function addGround(x, opts = {}) {
   const rungs = [canvas.height - 80, canvas.height - 200, canvas.height - 320];
   const width = opts.width || 160;
   const gap = opts.gap !== undefined ? opts.gap : 80 + Math.random() * 80;
-  const y = opts.y !== undefined ? opts.y : rungs[Math.floor(Math.random() * rungs.length)];
+  let y;
+  if (opts.y !== undefined) {
+    y = opts.y;
+  } else {
+    const last = GAME.ground[GAME.ground.length - 1];
+    if (last && Math.random() < 0.6) {
+      const choices = rungs.filter(r => r !== last.y);
+      y = choices[Math.floor(Math.random() * choices.length)];
+    } else {
+      y = rungs[Math.floor(Math.random() * rungs.length)];
+    }
+  }
   const g = { x, y, width, gap };
   GAME.ground.push(g);
   return g;
@@ -169,6 +183,11 @@ function update() {
 
   if (GAME.player.dash > 0) {
     GAME.player.dash--;
+    if (GAME.player.dash === 0) {
+      GAME.player.dashBuffer = 10;
+    }
+  } else if (GAME.player.dashBuffer > 0) {
+    GAME.player.dashBuffer--;
   }
 
   // move ground and obstacles
@@ -201,11 +220,12 @@ function update() {
   // collision
   GAME.obstacles.forEach(o => {
     if (o.hit) return;
-    const px = GAME.player.x + (GAME.player.dash > 0 ? 32 : 0);
+    const dashActive = GAME.player.dash > 0 || GAME.player.dashBuffer > 0;
+    const px = GAME.player.x + (dashActive ? 48 : 0);
     const py = GAME.player.y - GAME.player.height + 10;
-    const playerImg = GAME.player.dash > 0 ? images[ASSETS.dash] : images[ASSETS.run[GAME.player.frame]];
+    const playerImg = dashActive ? images[ASSETS.dash] : images[ASSETS.run[GAME.player.frame]];
     const obsImg = images[o.type === 'orange' ? ASSETS.orange : ASSETS.black];
-    const buffer = 10;
+    const buffer = dashActive ? 0 : 10;
     if (
       px + buffer < o.x + 96 - buffer &&
       px + GAME.player.width - buffer > o.x + buffer &&
@@ -213,12 +233,13 @@ function update() {
       py + GAME.player.height - buffer > o.y + buffer &&
       isPixelCollision(playerImg, px, py, GAME.player.width, GAME.player.height, obsImg, o.x, o.y, 96, 96)
     ) {
-      if (o.type === 'orange' && GAME.player.dash > 0) {
+      if (o.type === 'orange' && dashActive) {
         o.hit = true;
         o.timer = 10;
         GAME.player.coins += 5;
       } else {
         GAME.player.alive = false;
+        GAME.deathByObstacle = true;
       }
     }
   });
@@ -282,18 +303,24 @@ function loop() {
 }
 
 function gameOverPrompt() {
-  gameOverEl.style.display = 'flex';
+  if (GAME.deathByObstacle) {
+    window.location.href = 'index.html';
+  } else {
+    gameOverEl.style.display = 'flex';
+  }
 }
 
 function restart() {
   GAME.player.alive = true;
   GAME.gameOverHandled = false;
+  GAME.deathByObstacle = false;
   GAME.distance = 0;
   GAME.player.coins = 0;
   GAME.player.x = 100;
   GAME.player.vy = 0;
   GAME.player.jumpCharges = 2;
   GAME.player.dashCharges = 2;
+  GAME.player.dashBuffer = 0;
   GAME.ground = [];
   GAME.obstacles = [];
   let x = 0;
