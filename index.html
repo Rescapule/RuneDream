@@ -7,11 +7,14 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <canvas id="gameCanvas" width="800" height="450"></canvas>
-  <div id="hud">
-    <span id="distance">0m</span>
-    <span id="coins">0</span>
+  <div id="landing">
+    <h1>RuneDream</h1>
+    <button id="startBtn">Start Game</button>
   </div>
-  <script src="js/game.js"></script>
+  <script>
+    document.getElementById('startBtn').addEventListener('click', () => {
+      window.open('game.html', 'RuneDreamGame', 'width=820,height=510');
+    });
+  </script>
 </body>
 </html>

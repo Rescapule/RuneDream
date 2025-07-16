@@ -92,8 +92,9 @@ const GAME = {
 };
 
 function init() {
-  canvas.width = 800;
-  canvas.height = 450;
+  const container = document.getElementById('gameContainer');
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
   GAME.player.y = canvas.height - 100;
   GAME.player.jumpCharges = 2;
   GAME.player.dashCharges = 2;
@@ -289,4 +290,8 @@ function restart() {
   GAME.player.y = getGroundLevel(GAME.player.x) - 10;
 }
 
-loadImages(init);
+function startGame() {
+  loadImages(init);
+}
+
+window.startGame = startGame;

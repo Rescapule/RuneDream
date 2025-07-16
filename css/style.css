@@ -1,14 +1,35 @@
 body {
   margin: 0;
-  overflow: hidden;
   background: #89ABE3;
   font-family: sans-serif;
+}
+
+#landing {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#startBtn {
+  padding: 10px 20px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+#gameContainer {
+  position: relative;
+  width: 800px;
+  height: 450px;
+  margin: 20px auto;
 }
 
 #gameCanvas {
   display: block;
   background: #d0e0ff;
-  margin: 0 auto;
+  width: 100%;
+  height: 100%;
 }
 
 #hud {
