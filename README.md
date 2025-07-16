@@ -5,7 +5,7 @@ RuneDream is a simple endless runner prototype. Control the Wisp Dragon with key
 ## Controls
 
 - **Jump**: `Space` or `ArrowUp`
-- **Dash**: `Shift` or `X`
+- **Dash**: `Control` or `X`
 
 ## Play
 

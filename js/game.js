@@ -89,8 +89,11 @@ function init() {
   GAME.player.jumpCharges = 2;
   GAME.player.dashCharges = 2;
   let x = 0;
-  for (let i = 0; i < 10; i++) {
-    addGround(x);
+  const first = addGround(x, { width: canvas.width, gap: 40, y: canvas.height - 200 });
+  x = first.x + first.width + first.gap;
+  for (let i = 1; i < 10; i++) {
+    const g = addGround(x);
+    if (Math.random() < 0.5) addObstacleOnGround(g);
     const last = GAME.ground[GAME.ground.length-1];
     x = last.x + last.width + last.gap;
   }
@@ -105,7 +108,7 @@ function handleInput(e) {
       GAME.player.vy = -12;
       GAME.player.jumpCharges--;
     }
-  } else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyX') {
+  } else if (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.code === 'KeyX') {
     if (GAME.player.dash <= 0 && GAME.player.dashCharges > 0) {
       GAME.player.dash = 15;
       GAME.player.dashCharges--;
@@ -126,17 +129,22 @@ function onGround() {
   return GAME.player.y >= getGroundLevel(GAME.player.x + GAME.player.width / 2) - 10;
 }
 
-function addGround(x) {
+function addGround(x, opts = {}) {
   const rungs = [canvas.height - 80, canvas.height - 200, canvas.height - 320];
-  const gap = 80 + Math.random() * 80;
-  GAME.ground.push({ x, y: rungs[Math.floor(Math.random() * rungs.length)], width: 160, gap });
+  const width = opts.width || 160;
+  const gap = opts.gap !== undefined ? opts.gap : 80 + Math.random() * 80;
+  const y = opts.y !== undefined ? opts.y : rungs[Math.floor(Math.random() * rungs.length)];
+  const g = { x, y, width, gap };
+  GAME.ground.push(g);
+  return g;
 }
 
-function addObstacle(x) {
+function addObstacleOnGround(g) {
   const type = Math.random() < 0.2 ? 'black' : 'orange';
-  const y = getGroundLevel(x) - 96;
-  GAME.obstacles.push({ x, y, type, hit: false, timer: 0 });
+  const offset = Math.random() * Math.max(0, g.width - 96);
+  GAME.obstacles.push({ x: g.x + offset, y: g.y - 96, type, hit: false, timer: 0 });
 }
+
 
 function update() {
   if (!GAME.player.alive) return;
@@ -153,6 +161,10 @@ function update() {
     GAME.player.vy = 0;
     GAME.player.jumpCharges = 2;
     GAME.player.dashCharges = 2;
+  }
+
+  if (GAME.player.y + 10 > canvas.height) {
+    GAME.player.alive = false;
   }
 
   if (GAME.player.dash > 0) {
@@ -179,8 +191,8 @@ function update() {
   if (GAME.ground[0].x + GAME.ground[0].width < 0) {
     GAME.ground.shift();
     const last = GAME.ground[GAME.ground.length-1];
-    addGround(last.x + last.width + last.gap);
-    if (Math.random() < 0.5) addObstacle(canvas.width + 100);
+    const g = addGround(last.x + last.width + last.gap);
+    if (Math.random() < 0.5) addObstacleOnGround(g);
   }
   if (GAME.obstacles.length && GAME.obstacles[0].x < -50) {
     GAME.obstacles.shift();
@@ -285,8 +297,11 @@ function restart() {
   GAME.ground = [];
   GAME.obstacles = [];
   let x = 0;
-  for (let i = 0; i < 10; i++) {
-    addGround(x);
+  const first = addGround(x, { width: canvas.width, gap: 40, y: canvas.height - 200 });
+  x = first.x + first.width + first.gap;
+  for (let i = 1; i < 10; i++) {
+    const g = addGround(x);
+    if (Math.random() < 0.5) addObstacleOnGround(g);
     const last = GAME.ground[GAME.ground.length-1];
     x = last.x + last.width + last.gap;
   }
