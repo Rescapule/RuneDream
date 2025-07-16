@@ -24,10 +24,10 @@ const ASSETS = {
 const images = {};
 const sounds = {};
 let loaded = 0;
-let total = ASSETS.run.length + 7;
+let total = ASSETS.run.length + 8;
 
 function loadImages(cb) {
-  [...ASSETS.run, ASSETS.dash, ASSETS.plat, ASSETS.orange, ASSETS.black].forEach(src => {
+  [...ASSETS.run, ASSETS.dash, ASSETS.plat, ASSETS.orange, ASSETS.orangeBreak, ASSETS.black].forEach(src => {
     const img = new Image();
     img.src = src;
     img.onload = () => {
