@@ -11,6 +11,7 @@
     <h1>RuneDream</h1>
     <button id="playBtn">Play Game</button>
     <button id="shopBtn">Upgrade Shop</button>
+    <button id="resetBtn">Reset Progress</button>
   </div>
   <script>
     document.getElementById('playBtn').addEventListener('click', () => {
@@ -18,6 +19,14 @@
     });
     document.getElementById('shopBtn').addEventListener('click', () => {
       window.location.href = 'upgrade.html';
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      localStorage.setItem('coins', '0');
+      localStorage.setItem('jumpLevel', '0');
+      localStorage.setItem('dashLevel', '0');
+      localStorage.setItem('shieldLevel', '0');
+      localStorage.setItem('upgradeCost', '25');
+      alert('Progress reset!');
     });
   </script>
 </body>

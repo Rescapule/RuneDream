@@ -9,17 +9,23 @@
 <body>
   <div id="shop">
     <h1>Upgrade Shop</h1>
+    <p>Coins: <span id="coinDisplay">0</span></p>
     <ul>
-      <li>Extra Jump - 50 coins</li>
-      <li>Dash Recharge - 30 coins</li>
-      <li>Armor - 100 coins</li>
+      <li>
+        Add a Jump Charge - <span class="cost"></span> coins
+        <button id="jumpBtn">Buy</button>
+      </li>
+      <li>
+        Add a Dash Charge - <span class="cost"></span> coins
+        <button id="dashBtn">Buy</button>
+      </li>
+      <li>
+        Add a Shield Charge - <span class="cost"></span> coins
+        <button id="shieldBtn">Buy</button>
+      </li>
     </ul>
     <button id="backBtn">Back</button>
   </div>
-  <script>
-    document.getElementById('backBtn').addEventListener('click', () => {
-      window.location.href = 'index.html';
-    });
-  </script>
+  <script src="js/upgrade.js"></script>
 </body>
 </html>
