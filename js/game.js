@@ -57,6 +57,10 @@ function isPixelCollision(img1, x1, y1, w1, h1, img2, x2, y2, w2, h2) {
   return false;
 }
 
+const INPUT = {
+  jumpKeyDown: false
+};
+
 const GAME = {
   speed: 4,
   gravity: 0.5,
@@ -71,9 +75,16 @@ const GAME = {
     dash: 0,
     dashBuffer: 0,
     dashCharges: 2,
+    maxDashCharges: 2,
     dashY: 0,
     jumpCharges: 2,
+    maxJumpCharges: 2,
+    jumpHoldFrames: 0,
+    maxJumpHold: 15,
+    isJumping: false,
     coins: 0,
+    hp: 1,
+    maxHp: 1,
     alive: true
   },
   ground: [],
@@ -88,13 +99,19 @@ function init() {
   canvas.width = container.clientWidth;
   canvas.height = container.clientHeight;
   GAME.player.coins = parseInt(localStorage.getItem('coins') || '0');
+  GAME.player.maxJumpCharges = 2 + parseInt(localStorage.getItem('jumpLevel') || '0');
+  GAME.player.maxDashCharges = 2 + parseInt(localStorage.getItem('dashLevel') || '0');
+  GAME.player.maxHp = 1 + parseInt(localStorage.getItem('shieldLevel') || '0');
+  GAME.player.hp = GAME.player.maxHp;
   coinsEl.textContent = GAME.player.coins;
   GAME.player.y = canvas.height - 210;
   GAME.player.dashY = GAME.player.y;
   GAME.deathByObstacle = false;
   gameOverEl.style.display = 'none';
-  GAME.player.jumpCharges = 2;
-  GAME.player.dashCharges = 2;
+  GAME.player.jumpCharges = GAME.player.maxJumpCharges;
+  GAME.player.dashCharges = GAME.player.maxDashCharges;
+  GAME.player.isJumping = false;
+  GAME.player.jumpHoldFrames = 0;
   let x = 0;
   const first = addGround(x, { width: canvas.width, gap: 40, y: canvas.height - 200 });
   x = first.x + first.width + first.gap;
@@ -105,16 +122,19 @@ function init() {
     x = last.x + last.width + last.gap;
   }
   window.addEventListener('keydown', handleInput);
+  window.addEventListener('keyup', handleKeyUp);
   window.requestAnimationFrame(loop);
 }
 
 function handleInput(e) {
   if (!GAME.player.alive) return;
   if (e.code === 'ArrowUp' || e.code === 'Space') {
-    if (GAME.player.jumpCharges > 0) {
+    if (GAME.player.jumpCharges > 0 && GAME.player.isJumping === false && GAME.player.jumpHoldFrames === 0) {
       GAME.player.vy = -12;
       GAME.player.jumpCharges--;
+      GAME.player.isJumping = true;
     }
+    GAME.player.jumpHoldFrames = 0;
   } else if (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.code === 'KeyX') {
     if (GAME.player.dash <= 0 && GAME.player.dashCharges > 0) {
       GAME.player.dash = 25;
@@ -122,6 +142,14 @@ function handleInput(e) {
       GAME.player.dashY = GAME.player.y;
       GAME.player.vy = 0;
     }
+  }
+  if (e.code === 'ArrowUp' || e.code === 'Space') INPUT.jumpKeyDown = true;
+}
+
+function handleKeyUp(e) {
+  if (e.code === 'ArrowUp' || e.code === 'Space') {
+    INPUT.jumpKeyDown = false;
+    GAME.player.isJumping = false;
   }
 }
 
@@ -183,6 +211,10 @@ function update() {
     if (GAME.player.dashBuffer > 0) {
       GAME.player.dashBuffer--;
     }
+    if (INPUT.jumpKeyDown && GAME.player.isJumping && GAME.player.jumpHoldFrames < GAME.player.maxJumpHold) {
+      GAME.player.vy -= 0.6;
+      GAME.player.jumpHoldFrames++;
+    }
     const prevY = GAME.player.y;
     GAME.player.vy += GAME.gravity;
     GAME.player.y += GAME.player.vy;
@@ -190,8 +222,10 @@ function update() {
     if (GAME.player.vy >= 0 && prevY <= groundLevel && GAME.player.y >= groundLevel) {
       GAME.player.y = groundLevel;
       GAME.player.vy = 0;
-      GAME.player.jumpCharges = 2;
-      GAME.player.dashCharges = 2;
+      GAME.player.jumpCharges = GAME.player.maxJumpCharges;
+      GAME.player.dashCharges = GAME.player.maxDashCharges;
+      GAME.player.jumpHoldFrames = 0;
+      GAME.player.isJumping = false;
     }
   }
 
@@ -253,8 +287,14 @@ function update() {
     }
 
     if (isPixelCollision(playerImg, px, py, GAME.player.width, GAME.player.height, obsImg, o.x, o.y, 96, 96)) {
-      GAME.player.alive = false;
-      GAME.deathByObstacle = true;
+      if (GAME.player.hp > 1) {
+        GAME.player.hp--;
+        o.hit = true;
+        o.timer = o.type === 'orange' ? 10 : 0;
+      } else {
+        GAME.player.alive = false;
+        GAME.deathByObstacle = true;
+      }
     }
   });
 
@@ -331,11 +371,17 @@ function restart() {
   GAME.deathByObstacle = false;
   GAME.distance = 0;
   GAME.player.coins = parseInt(localStorage.getItem('coins') || '0');
+  GAME.player.maxJumpCharges = 2 + parseInt(localStorage.getItem('jumpLevel') || '0');
+  GAME.player.maxDashCharges = 2 + parseInt(localStorage.getItem('dashLevel') || '0');
+  GAME.player.maxHp = 1 + parseInt(localStorage.getItem('shieldLevel') || '0');
+  GAME.player.hp = GAME.player.maxHp;
   GAME.player.x = 100;
   coinsEl.textContent = GAME.player.coins;
   GAME.player.vy = 0;
-  GAME.player.jumpCharges = 2;
-  GAME.player.dashCharges = 2;
+  GAME.player.jumpCharges = GAME.player.maxJumpCharges;
+  GAME.player.dashCharges = GAME.player.maxDashCharges;
+  GAME.player.isJumping = false;
+  GAME.player.jumpHoldFrames = 0;
   GAME.player.dashBuffer = 0;
   GAME.ground = [];
   GAME.obstacles = [];
