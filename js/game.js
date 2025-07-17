@@ -71,6 +71,7 @@ const GAME = {
     dash: 0,
     dashBuffer: 0,
     dashCharges: 2,
+    dashY: 0,
     jumpCharges: 2,
     coins: 0,
     alive: true
@@ -87,6 +88,7 @@ function init() {
   canvas.width = container.clientWidth;
   canvas.height = container.clientHeight;
   GAME.player.y = canvas.height - 210;
+  GAME.player.dashY = GAME.player.y;
   GAME.deathByObstacle = false;
   gameOverEl.style.display = 'none';
   GAME.player.jumpCharges = 2;
@@ -115,6 +117,8 @@ function handleInput(e) {
     if (GAME.player.dash <= 0 && GAME.player.dashCharges > 0) {
       GAME.player.dash = 25;
       GAME.player.dashCharges--;
+      GAME.player.dashY = GAME.player.y;
+      GAME.player.vy = 0;
     }
   }
 }
@@ -166,28 +170,31 @@ function update() {
   distanceEl.textContent = Math.floor(GAME.distance / 10) + 'm';
   coinsEl.textContent = GAME.player.coins;
 
-  const prevY = GAME.player.y;
-  GAME.player.vy += GAME.gravity;
-  GAME.player.y += GAME.player.vy;
-  const groundLevel = getGroundLevel(GAME.player.x + GAME.player.width / 2) - 10;
-  if (GAME.player.vy >= 0 && prevY <= groundLevel && GAME.player.y >= groundLevel) {
-    GAME.player.y = groundLevel;
+  if (GAME.player.dash > 0) {
+    GAME.player.dash--;
+    GAME.player.y = GAME.player.dashY;
     GAME.player.vy = 0;
-    GAME.player.jumpCharges = 2;
-    GAME.player.dashCharges = 2;
+    if (GAME.player.dash === 0) {
+      GAME.player.dashBuffer = 10;
+    }
+  } else {
+    if (GAME.player.dashBuffer > 0) {
+      GAME.player.dashBuffer--;
+    }
+    const prevY = GAME.player.y;
+    GAME.player.vy += GAME.gravity;
+    GAME.player.y += GAME.player.vy;
+    const groundLevel = getGroundLevel(GAME.player.x + GAME.player.width / 2) - 10;
+    if (GAME.player.vy >= 0 && prevY <= groundLevel && GAME.player.y >= groundLevel) {
+      GAME.player.y = groundLevel;
+      GAME.player.vy = 0;
+      GAME.player.jumpCharges = 2;
+      GAME.player.dashCharges = 2;
+    }
   }
 
   if (GAME.player.y + 10 > canvas.height) {
     GAME.player.alive = false;
-  }
-
-  if (GAME.player.dash > 0) {
-    GAME.player.dash--;
-    if (GAME.player.dash === 0) {
-      GAME.player.dashBuffer = 10;
-    }
-  } else if (GAME.player.dashBuffer > 0) {
-    GAME.player.dashBuffer--;
   }
 
   // move ground and obstacles
@@ -337,6 +344,7 @@ function restart() {
     x = last.x + last.width + last.gap;
   }
   GAME.player.y = getGroundLevel(GAME.player.x) - 10;
+  GAME.player.dashY = GAME.player.y;
   gameOverEl.style.display = 'none';
 }
 
