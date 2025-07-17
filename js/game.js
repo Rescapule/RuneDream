@@ -221,26 +221,30 @@ function update() {
   GAME.obstacles.forEach(o => {
     if (o.hit) return;
     const dashActive = GAME.player.dash > 0 || GAME.player.dashBuffer > 0;
-    const px = GAME.player.x + (dashActive ? 48 : 0);
+    const px = GAME.player.x;
     const py = GAME.player.y - GAME.player.height + 10;
     const playerImg = dashActive ? images[ASSETS.dash] : images[ASSETS.run[GAME.player.frame]];
     const obsImg = images[o.type === 'orange' ? ASSETS.orange : ASSETS.black];
     const buffer = dashActive ? 0 : 10;
-    if (
+
+    const boxHit =
       px + buffer < o.x + 96 - buffer &&
       px + GAME.player.width - buffer > o.x + buffer &&
       py + buffer < o.y + 96 - buffer &&
-      py + GAME.player.height - buffer > o.y + buffer &&
-      isPixelCollision(playerImg, px, py, GAME.player.width, GAME.player.height, obsImg, o.x, o.y, 96, 96)
-    ) {
-      if (o.type === 'orange' && dashActive) {
-        o.hit = true;
-        o.timer = 10;
-        GAME.player.coins += 5;
-      } else {
-        GAME.player.alive = false;
-        GAME.deathByObstacle = true;
-      }
+      py + GAME.player.height - buffer > o.y + buffer;
+
+    if (!boxHit) return;
+
+    if (o.type === 'orange' && dashActive) {
+      o.hit = true;
+      o.timer = 10;
+      GAME.player.coins += 5;
+      return;
+    }
+
+    if (isPixelCollision(playerImg, px, py, GAME.player.width, GAME.player.height, obsImg, o.x, o.y, 96, 96)) {
+      GAME.player.alive = false;
+      GAME.deathByObstacle = true;
     }
   });
 
