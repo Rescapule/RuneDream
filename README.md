@@ -7,6 +7,10 @@ RuneDream is a simple endless runner prototype. Control the Wisp Dragon with key
 - **Jump**: `Space` or `ArrowUp`
 - **Dash**: `Control` or `X`
 
+## Obstacles
+
+Orange stars can be destroyed by dashing through them. If you are dashing when you collide with one, it will explode and disappear, awarding extra coins. Touching an orange star without dashing is fatal. Black stars are always deadly and cannot be destroyed, even when dashing.
+
 ## Play
 
 Open `index.html` in a modern browser. You'll see a launch screen with a **Start Game** button. Clicking it opens the game in its own window. The game is designed with mobile in mind, so touch controls can be added later.
