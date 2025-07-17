@@ -87,6 +87,8 @@ function init() {
   const container = document.getElementById('gameContainer');
   canvas.width = container.clientWidth;
   canvas.height = container.clientHeight;
+  GAME.player.coins = parseInt(localStorage.getItem('coins') || '0');
+  coinsEl.textContent = GAME.player.coins;
   GAME.player.y = canvas.height - 210;
   GAME.player.dashY = GAME.player.y;
   GAME.deathByObstacle = false;
@@ -98,7 +100,7 @@ function init() {
   x = first.x + first.width + first.gap;
   for (let i = 1; i < 10; i++) {
     const g = addGround(x);
-    if (Math.random() < 0.5) addObstacleOnGround(g);
+    if (Math.random() < 0.25) addObstacleOnGround(g);
     const last = GAME.ground[GAME.ground.length-1];
     x = last.x + last.width + last.gap;
   }
@@ -138,7 +140,7 @@ function onGround() {
 
 function addGround(x, opts = {}) {
   const rungs = [canvas.height - 80, canvas.height - 200, canvas.height - 320];
-  const width = opts.width || 160;
+  const width = opts.width || 240 + Math.random() * 120;
   const gap = opts.gap !== undefined ? opts.gap : 80 + Math.random() * 80;
   let y;
   if (opts.y !== undefined) {
@@ -218,7 +220,7 @@ function update() {
     GAME.ground.shift();
     const last = GAME.ground[GAME.ground.length-1];
     const g = addGround(last.x + last.width + last.gap);
-    if (Math.random() < 0.5) addObstacleOnGround(g);
+    if (Math.random() < 0.25) addObstacleOnGround(g);
   }
   if (GAME.obstacles.length && GAME.obstacles[0].x < -50) {
     GAME.obstacles.shift();
@@ -246,6 +248,7 @@ function update() {
       o.hit = true;
       o.timer = 10;
       GAME.player.coins += 5;
+      localStorage.setItem('coins', GAME.player.coins);
       return;
     }
 
@@ -303,7 +306,11 @@ function draw() {
     ctx.drawImage(sprite, 0, 0, GAME.player.width, GAME.player.height);
     ctx.restore();
   } else {
-    ctx.drawImage(sprite, GAME.player.x, GAME.player.y - GAME.player.height + 10, GAME.player.width, GAME.player.height);
+    ctx.save();
+    ctx.translate(GAME.player.x + GAME.player.width, GAME.player.y - GAME.player.height + 10);
+    ctx.scale(-1, 1);
+    ctx.drawImage(sprite, 0, 0, GAME.player.width, GAME.player.height);
+    ctx.restore();
   }
 }
 
@@ -314,11 +321,8 @@ function loop() {
 }
 
 function gameOverPrompt() {
-  if (GAME.deathByObstacle) {
-    window.location.href = 'index.html';
-  } else {
-    gameOverEl.style.display = 'flex';
-  }
+  gameOverEl.style.display = 'flex';
+  localStorage.setItem('coins', GAME.player.coins);
 }
 
 function restart() {
@@ -326,8 +330,9 @@ function restart() {
   GAME.gameOverHandled = false;
   GAME.deathByObstacle = false;
   GAME.distance = 0;
-  GAME.player.coins = 0;
+  GAME.player.coins = parseInt(localStorage.getItem('coins') || '0');
   GAME.player.x = 100;
+  coinsEl.textContent = GAME.player.coins;
   GAME.player.vy = 0;
   GAME.player.jumpCharges = 2;
   GAME.player.dashCharges = 2;
@@ -339,7 +344,7 @@ function restart() {
   x = first.x + first.width + first.gap;
   for (let i = 1; i < 10; i++) {
     const g = addGround(x);
-    if (Math.random() < 0.5) addObstacleOnGround(g);
+    if (Math.random() < 0.25) addObstacleOnGround(g);
     const last = GAME.ground[GAME.ground.length-1];
     x = last.x + last.width + last.gap;
   }
