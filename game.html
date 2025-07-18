@@ -13,6 +13,7 @@
       <span id="distance">0m</span>
       <span id="coins">0</span>
     </div>
+    <span id="timer">3:00</span>
     <div id="gameOver">
       <p>You lost!</p>
       <button id="returnBtn">Main Menu</button>
@@ -21,7 +22,9 @@
   <script src="js/game.js"></script>
   <script>
     window.addEventListener('load', () => {
-      startGame();
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get('mode') === 'time' ? 'time' : 'normal';
+      startGame(mode);
       document.getElementById('returnBtn').addEventListener('click', () => {
         window.location.href = 'index.html';
       });

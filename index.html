@@ -9,13 +9,27 @@
 <body>
   <div id="landing">
     <h1>RuneDream</h1>
+    <div id="scores">
+      <div id="normalScores" class="scoreTable">
+        <h2>High Scores</h2>
+        <ol id="scoreList"></ol>
+      </div>
+      <div id="taScores" class="scoreTable">
+        <h2>Time Attack</h2>
+        <ol id="taScoreList"></ol>
+      </div>
+    </div>
     <button id="playBtn">Play Game</button>
+    <button id="timeBtn">Time Attack Mode</button>
     <button id="shopBtn">Upgrade Shop</button>
     <button id="resetBtn">Reset Progress</button>
   </div>
   <script>
     document.getElementById('playBtn').addEventListener('click', () => {
       window.location.href = 'game.html';
+    });
+    document.getElementById('timeBtn').addEventListener('click', () => {
+      window.location.href = 'game.html?mode=time';
     });
     document.getElementById('shopBtn').addEventListener('click', () => {
       window.location.href = 'upgrade.html';
@@ -31,6 +45,19 @@
       localStorage.setItem('upgradeCost', '25');
       alert('Progress reset!');
     });
+
+    function populate(listId, key) {
+      const arr = JSON.parse(localStorage.getItem(key) || '[]');
+      const el = document.getElementById(listId);
+      el.innerHTML = '';
+      arr.forEach(s => {
+        const li = document.createElement('li');
+        li.textContent = s + 'm';
+        el.appendChild(li);
+      });
+    }
+    populate('scoreList', 'scores');
+    populate('taScoreList', 'taScores');
   </script>
 </body>
 </html>
