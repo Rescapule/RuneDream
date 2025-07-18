@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 const distanceEl = document.getElementById('distance');
 const coinsEl = document.getElementById('coins');
 const gameOverEl = document.getElementById('gameOver');
+const timerEl = document.getElementById('timer');
 
 const ASSETS = {
   run: [
@@ -91,6 +92,9 @@ const INPUT = {
 const GAME = {
   speed: 4,
   gravity: 0.5,
+  mode: 'normal',
+  timer: 0,
+  flashTimer: 0,
   player: {
     x: 100,
     y: 0,
@@ -141,6 +145,13 @@ function init() {
   GAME.player.dashY = GAME.player.y;
   GAME.deathByObstacle = false;
   gameOverEl.style.display = 'none';
+  if (GAME.mode === 'time') {
+    GAME.timer = 180 * 60;
+    timerEl.style.display = 'block';
+    timerEl.textContent = '3:00';
+  } else {
+    timerEl.style.display = 'none';
+  }
   GAME.player.jumpCharges = GAME.player.maxJumpCharges;
   GAME.player.dashCharges = GAME.player.maxDashCharges;
   let x = 0;
@@ -250,6 +261,18 @@ function loseLife(reason) {
 
 function update() {
   if (!GAME.player.alive) return;
+  if (GAME.mode === 'time') {
+    GAME.timer--;
+    if (GAME.timer <= 0) {
+      GAME.timer = 0;
+      GAME.player.alive = false;
+    }
+    const secs = Math.ceil(GAME.timer / 60);
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    timerEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+  }
+  if (GAME.flashTimer > 0) GAME.flashTimer--;
   GAME.distance += GAME.speed;
   distanceEl.textContent = Math.floor(GAME.distance / 10) + 'm';
   coinsEl.textContent = GAME.player.coins;
@@ -330,6 +353,9 @@ function update() {
       o.hit = true;
       o.timer = 10;
       GAME.player.coins += 5;
+      if (GAME.mode === 'time') {
+        GAME.timer += 15 * 60;
+      }
       localStorage.setItem('coins', GAME.player.coins);
       return;
     }
@@ -345,6 +371,9 @@ function update() {
           o.timer = 10;
         }
         loseLife('obstacle');
+      }
+      if (o.type === 'orange' && !dashActive) {
+        GAME.flashTimer = 10;
       }
     }
   });
@@ -403,6 +432,11 @@ function draw() {
     ctx.drawImage(sprite, 0, 0, GAME.player.width, GAME.player.height);
     ctx.restore();
   }
+
+  if (GAME.flashTimer > 0) {
+    ctx.fillStyle = 'rgba(255,0,0,0.4)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 }
 
 function loop() {
@@ -414,6 +448,7 @@ function loop() {
 function gameOverPrompt() {
   gameOverEl.style.display = 'flex';
   localStorage.setItem('coins', GAME.player.coins);
+  recordScore();
 }
 
 function restart() {
@@ -451,9 +486,24 @@ function restart() {
   GAME.player.y = getGroundLevel(GAME.player.x) - 10;
   GAME.player.dashY = GAME.player.y;
   gameOverEl.style.display = 'none';
+  if (GAME.mode === 'time') {
+    GAME.timer = 180 * 60;
+    timerEl.textContent = '3:00';
+  }
 }
 
-function startGame() {
+function recordScore() {
+  const key = GAME.mode === 'time' ? 'taScores' : 'scores';
+  const val = Math.floor(GAME.distance / 10);
+  let arr = JSON.parse(localStorage.getItem(key) || '[]');
+  arr.push(val);
+  arr.sort((a, b) => b - a);
+  if (arr.length > 5) arr = arr.slice(0, 5);
+  localStorage.setItem(key, JSON.stringify(arr));
+}
+
+function startGame(mode = 'normal') {
+  GAME.mode = mode;
   loadImages(init);
 }
 
