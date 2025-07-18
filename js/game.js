@@ -36,25 +36,52 @@ function loadImages(cb) {
 }
 
 function isPixelCollision(img1, x1, y1, w1, h1, img2, x2, y2, w2, h2) {
-  const w = Math.min(x1 + w1, x2 + w2) - Math.max(x1, x2);
-  const h = Math.min(y1 + h1, y2 + h2) - Math.max(y1, y2);
+  const left = Math.max(x1, x2);
+  const right = Math.min(x1 + w1, x2 + w2);
+  const top = Math.max(y1, y2);
+  const bottom = Math.min(y1 + h1, y2 + h2);
+  const w = right - left;
+  const h = bottom - top;
   if (w <= 0 || h <= 0) return false;
-  const canvas1 = document.createElement('canvas');
-  canvas1.width = w;
-  canvas1.height = h;
-  const c1 = canvas1.getContext('2d');
-  c1.drawImage(img1, x1 - Math.max(x1, x2), y1 - Math.max(y1, y2));
-  const data1 = c1.getImageData(0, 0, w, h).data;
-  const canvas2 = document.createElement('canvas');
-  canvas2.width = w;
-  canvas2.height = h;
-  const c2 = canvas2.getContext('2d');
-  c2.drawImage(img2, x2 - Math.max(x1, x2), y2 - Math.max(y1, y2), w2, h2);
-  const data2 = c2.getImageData(0, 0, w, h).data;
-  for (let i = 3; i < data1.length; i += 4) {
-    if (data1[i] !== 0 && data2[i] !== 0) return true;
+
+  if (!isPixelCollision.canvas1) {
+    isPixelCollision.canvas1 = document.createElement('canvas');
+    isPixelCollision.canvas2 = document.createElement('canvas');
+    isPixelCollision.ctx1 = isPixelCollision.canvas1.getContext('2d');
+    isPixelCollision.ctx2 = isPixelCollision.canvas2.getContext('2d');
   }
-  return false;
+  const c1 = isPixelCollision.ctx1;
+  const c2 = isPixelCollision.ctx2;
+  isPixelCollision.canvas1.width = w;
+  isPixelCollision.canvas1.height = h;
+  isPixelCollision.canvas2.width = w;
+  isPixelCollision.canvas2.height = h;
+
+  const x1Offset = left - x1;
+  const y1Offset = top - y1;
+  const x2Offset = left - x2;
+  const y2Offset = top - y2;
+
+  try {
+    c1.clearRect(0, 0, w, h);
+    c1.drawImage(img1, x1Offset, y1Offset, w1, h1);
+    c2.clearRect(0, 0, w, h);
+    c2.drawImage(img2, x2Offset, y2Offset, w2, h2);
+    const data1 = c1.getImageData(0, 0, w, h).data;
+    const data2 = c2.getImageData(0, 0, w, h).data;
+    for (let i = 3; i < data1.length; i += 4) {
+      if (data1[i] !== 0 && data2[i] !== 0) return true;
+    }
+    return false;
+  } catch (e) {
+    console.error('Pixel collision error:', e);
+    return (
+      x1 < x2 + w2 &&
+      x1 + w1 > x2 &&
+      y1 < y2 + h2 &&
+      y1 + h1 > y2
+    );
+  }
 }
 
 const INPUT = {
