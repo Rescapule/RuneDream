@@ -372,7 +372,7 @@ function update() {
         }
         loseLife('obstacle');
       }
-      if (o.type === 'orange' && !dashActive) {
+      if ((o.type === 'orange' && !dashActive) || o.type === 'black') {
         GAME.flashTimer = 10;
       }
     }
