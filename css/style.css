@@ -71,3 +71,8 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+.stars {
+  color: gold;
+  margin-left: 5px;
+}

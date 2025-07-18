@@ -76,9 +76,11 @@ const GAME = {
     dashBuffer: 0,
     dashCharges: 2,
     maxDashCharges: 2,
+    dashDuration: 25,
     dashY: 0,
     jumpCharges: 2,
     maxJumpCharges: 2,
+    jumpStrength: 12,
     coins: 0,
     hp: 1,
     maxHp: 1,
@@ -98,7 +100,11 @@ function init() {
   GAME.player.coins = parseInt(localStorage.getItem('coins') || '0');
   GAME.player.maxJumpCharges = 2 + parseInt(localStorage.getItem('jumpLevel') || '0');
   GAME.player.maxDashCharges = 2 + parseInt(localStorage.getItem('dashLevel') || '0');
-  GAME.player.maxHp = 1 + parseInt(localStorage.getItem('shieldLevel') || '0');
+  GAME.player.maxHp = 1 +
+    parseInt(localStorage.getItem('shieldLevel') || '0') +
+    parseInt(localStorage.getItem('extraLifeLevel') || '0');
+  GAME.player.jumpStrength = 12 + 2 * parseInt(localStorage.getItem('jumpHeightLevel') || '0');
+  GAME.player.dashDuration = 25 + 5 * parseInt(localStorage.getItem('dashDurationLevel') || '0');
   GAME.player.hp = GAME.player.maxHp;
   coinsEl.textContent = GAME.player.coins;
   GAME.player.y = canvas.height - 210;
@@ -125,12 +131,12 @@ function handleInput(e) {
   if (!GAME.player.alive) return;
   if (e.code === 'ArrowUp' || e.code === 'Space') {
     if (GAME.player.jumpCharges > 0) {
-      GAME.player.vy = -12;
+      GAME.player.vy = -GAME.player.jumpStrength;
       GAME.player.jumpCharges--;
     }
   } else if (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.code === 'KeyX') {
     if (GAME.player.dash <= 0 && GAME.player.dashCharges > 0) {
-      GAME.player.dash = 25;
+      GAME.player.dash = GAME.player.dashDuration;
       GAME.player.dashCharges--;
       GAME.player.dashY = GAME.player.y;
       GAME.player.vy = 0;
@@ -362,7 +368,11 @@ function restart() {
   GAME.player.coins = parseInt(localStorage.getItem('coins') || '0');
   GAME.player.maxJumpCharges = 2 + parseInt(localStorage.getItem('jumpLevel') || '0');
   GAME.player.maxDashCharges = 2 + parseInt(localStorage.getItem('dashLevel') || '0');
-  GAME.player.maxHp = 1 + parseInt(localStorage.getItem('shieldLevel') || '0');
+  GAME.player.maxHp = 1 +
+    parseInt(localStorage.getItem('shieldLevel') || '0') +
+    parseInt(localStorage.getItem('extraLifeLevel') || '0');
+  GAME.player.jumpStrength = 12 + 2 * parseInt(localStorage.getItem('jumpHeightLevel') || '0');
+  GAME.player.dashDuration = 25 + 5 * parseInt(localStorage.getItem('dashDurationLevel') || '0');
   GAME.player.hp = GAME.player.maxHp;
   GAME.player.x = 100;
   coinsEl.textContent = GAME.player.coins;
