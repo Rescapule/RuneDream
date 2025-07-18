@@ -12,18 +12,31 @@
     <p>Coins: <span id="coinDisplay">0</span></p>
     <ul>
       <li>
-        Add a Jump Charge - <span class="cost"></span> coins
+        Add a Jump Charge <span id="jumpStars" class="stars"></span> - <span class="cost"></span> coins
         <button id="jumpBtn">Buy</button>
       </li>
       <li>
-        Add a Dash Charge - <span class="cost"></span> coins
+        Add a Dash Charge <span id="dashStars" class="stars"></span> - <span class="cost"></span> coins
         <button id="dashBtn">Buy</button>
       </li>
       <li>
-        Add a Shield Charge - <span class="cost"></span> coins
+        Add a Shield Charge <span id="shieldStars" class="stars"></span> - <span class="cost"></span> coins
         <button id="shieldBtn">Buy</button>
       </li>
+      <li>
+        Increase Jump Height <span id="jumpHeightStars" class="stars"></span> - <span class="cost"></span> coins
+        <button id="jumpHeightBtn">Buy</button>
+      </li>
+      <li>
+        Increase Dash Duration <span id="dashDurationStars" class="stars"></span> - <span class="cost"></span> coins
+        <button id="dashDurationBtn">Buy</button>
+      </li>
+      <li>
+        Gain an Extra Life <span id="lifeStars" class="stars"></span> - <span class="cost"></span> coins
+        <button id="lifeBtn">Buy</button>
+      </li>
     </ul>
+    <button id="refundBtn">Refund all Coins</button>
     <button id="backBtn">Back</button>
   </div>
   <script src="js/upgrade.js"></script>
