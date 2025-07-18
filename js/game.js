@@ -99,8 +99,8 @@ const GAME = {
     x: 100,
     y: 0,
     vy: 0,
-    width: 64,
-    height: 64,
+    width: 96,
+    height: 96,
     frame: 0,
     frameTime: 0,
     dash: 0,
@@ -387,10 +387,7 @@ function update() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // background gradient
-  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  grad.addColorStop(0, '#89ABE3');
-  grad.addColorStop(1, '#F0F8FF');
-  ctx.fillStyle = grad;
+  ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // ground
