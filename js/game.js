@@ -84,6 +84,8 @@ const GAME = {
     coins: 0,
     hp: 1,
     maxHp: 1,
+    lives: 0,
+    maxLives: 0,
     alive: true
   },
   ground: [],
@@ -101,8 +103,9 @@ function init() {
   GAME.player.maxJumpCharges = 2 + parseInt(localStorage.getItem('jumpLevel') || '0');
   GAME.player.maxDashCharges = 2 + parseInt(localStorage.getItem('dashLevel') || '0');
   GAME.player.maxHp = 1 +
-    parseInt(localStorage.getItem('shieldLevel') || '0') +
-    parseInt(localStorage.getItem('extraLifeLevel') || '0');
+    parseInt(localStorage.getItem('shieldLevel') || '0');
+  GAME.player.maxLives = parseInt(localStorage.getItem('extraLifeLevel') || '0');
+  GAME.player.lives = GAME.player.maxLives;
   GAME.player.jumpStrength = 12 + 2 * parseInt(localStorage.getItem('jumpHeightLevel') || '0');
   GAME.player.dashDuration = 25 + 5 * parseInt(localStorage.getItem('dashDurationLevel') || '0');
   GAME.player.hp = GAME.player.maxHp;
@@ -194,6 +197,29 @@ function addObstacleOnGround(g) {
   GAME.obstacles.push({ x: g.x + offset, y: g.y - 96, type, hit: false, timer: 0 });
 }
 
+function respawnPlayer() {
+  GAME.player.y = -GAME.player.height;
+  GAME.player.vy = 1;
+  GAME.player.x = 100;
+  GAME.player.hp = GAME.player.maxHp;
+  GAME.player.jumpCharges = GAME.player.maxJumpCharges;
+  GAME.player.dashCharges = GAME.player.maxDashCharges;
+  GAME.player.dash = 0;
+  GAME.player.dashBuffer = 0;
+  GAME.player.dashY = GAME.player.y;
+  GAME.player.alive = true;
+}
+
+function loseLife(reason) {
+  if (GAME.player.lives > 0) {
+    GAME.player.lives--;
+    respawnPlayer();
+  } else {
+    GAME.player.alive = false;
+    if (reason === 'obstacle') GAME.deathByObstacle = true;
+  }
+}
+
 
 function update() {
   if (!GAME.player.alive) return;
@@ -225,7 +251,7 @@ function update() {
   }
 
   if (GAME.player.y + 10 > canvas.height) {
-    GAME.player.alive = false;
+    loseLife('fall');
   }
 
   // move ground and obstacles
@@ -287,8 +313,11 @@ function update() {
         o.hit = true;
         o.timer = o.type === 'orange' ? 10 : 0;
       } else {
-        GAME.player.alive = false;
-        GAME.deathByObstacle = true;
+        if (o.type === 'orange') {
+          o.hit = true;
+          o.timer = 10;
+        }
+        loseLife('obstacle');
       }
     }
   });
@@ -369,8 +398,9 @@ function restart() {
   GAME.player.maxJumpCharges = 2 + parseInt(localStorage.getItem('jumpLevel') || '0');
   GAME.player.maxDashCharges = 2 + parseInt(localStorage.getItem('dashLevel') || '0');
   GAME.player.maxHp = 1 +
-    parseInt(localStorage.getItem('shieldLevel') || '0') +
-    parseInt(localStorage.getItem('extraLifeLevel') || '0');
+    parseInt(localStorage.getItem('shieldLevel') || '0');
+  GAME.player.maxLives = parseInt(localStorage.getItem('extraLifeLevel') || '0');
+  GAME.player.lives = GAME.player.maxLives;
   GAME.player.jumpStrength = 12 + 2 * parseInt(localStorage.getItem('jumpHeightLevel') || '0');
   GAME.player.dashDuration = 25 + 5 * parseInt(localStorage.getItem('dashDurationLevel') || '0');
   GAME.player.hp = GAME.player.maxHp;
