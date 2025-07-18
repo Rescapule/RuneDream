@@ -4,6 +4,14 @@ body {
   font-family: sans-serif;
 }
 
+body.landing {
+  background: url("../Title Screen.png") center/cover no-repeat;
+}
+
+body.game {
+  background: url("../Blank Screen.png") center/cover no-repeat;
+}
+
 #landing {
   height: 100vh;
   display: flex;
@@ -19,6 +27,13 @@ body {
 #returnBtn {
   padding: 10px 20px;
   font-size: 24px;
+  cursor: pointer;
+}
+
+.menu-button {
+  width: 300px;
+  height: auto;
+  margin: 10px 0;
   cursor: pointer;
 }
 
