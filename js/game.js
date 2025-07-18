@@ -58,7 +58,7 @@ function isPixelCollision(img1, x1, y1, w1, h1, img2, x2, y2, w2, h2) {
 }
 
 const INPUT = {
-  jumpKeyDown: false
+  jumpHeld: false
 };
 
 const GAME = {
@@ -79,9 +79,6 @@ const GAME = {
     dashY: 0,
     jumpCharges: 2,
     maxJumpCharges: 2,
-    jumpHoldFrames: 0,
-    maxJumpHold: 15,
-    isJumping: false,
     coins: 0,
     hp: 1,
     maxHp: 1,
@@ -110,8 +107,6 @@ function init() {
   gameOverEl.style.display = 'none';
   GAME.player.jumpCharges = GAME.player.maxJumpCharges;
   GAME.player.dashCharges = GAME.player.maxDashCharges;
-  GAME.player.isJumping = false;
-  GAME.player.jumpHoldFrames = 0;
   let x = 0;
   const first = addGround(x, { width: canvas.width, gap: 40, y: canvas.height - 200 });
   x = first.x + first.width + first.gap;
@@ -129,12 +124,10 @@ function init() {
 function handleInput(e) {
   if (!GAME.player.alive) return;
   if (e.code === 'ArrowUp' || e.code === 'Space') {
-    if (GAME.player.jumpCharges > 0 && GAME.player.isJumping === false && GAME.player.jumpHoldFrames === 0) {
+    if (GAME.player.jumpCharges > 0) {
       GAME.player.vy = -12;
       GAME.player.jumpCharges--;
-      GAME.player.isJumping = true;
     }
-    GAME.player.jumpHoldFrames = 0;
   } else if (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.code === 'KeyX') {
     if (GAME.player.dash <= 0 && GAME.player.dashCharges > 0) {
       GAME.player.dash = 25;
@@ -143,13 +136,15 @@ function handleInput(e) {
       GAME.player.vy = 0;
     }
   }
-  if (e.code === 'ArrowUp' || e.code === 'Space') INPUT.jumpKeyDown = true;
+  if (e.code === 'ArrowUp' || e.code === 'Space') INPUT.jumpHeld = true;
 }
 
 function handleKeyUp(e) {
   if (e.code === 'ArrowUp' || e.code === 'Space') {
-    INPUT.jumpKeyDown = false;
-    GAME.player.isJumping = false;
+    INPUT.jumpHeld = false;
+    if (GAME.player.vy < -4) {
+      GAME.player.vy = -4;
+    }
   }
 }
 
@@ -211,10 +206,6 @@ function update() {
     if (GAME.player.dashBuffer > 0) {
       GAME.player.dashBuffer--;
     }
-    if (INPUT.jumpKeyDown && GAME.player.isJumping && GAME.player.jumpHoldFrames < GAME.player.maxJumpHold) {
-      GAME.player.vy -= 0.6;
-      GAME.player.jumpHoldFrames++;
-    }
     const prevY = GAME.player.y;
     GAME.player.vy += GAME.gravity;
     GAME.player.y += GAME.player.vy;
@@ -224,8 +215,6 @@ function update() {
       GAME.player.vy = 0;
       GAME.player.jumpCharges = GAME.player.maxJumpCharges;
       GAME.player.dashCharges = GAME.player.maxDashCharges;
-      GAME.player.jumpHoldFrames = 0;
-      GAME.player.isJumping = false;
     }
   }
 
@@ -380,8 +369,6 @@ function restart() {
   GAME.player.vy = 0;
   GAME.player.jumpCharges = GAME.player.maxJumpCharges;
   GAME.player.dashCharges = GAME.player.maxDashCharges;
-  GAME.player.isJumping = false;
-  GAME.player.jumpHoldFrames = 0;
   GAME.player.dashBuffer = 0;
   GAME.ground = [];
   GAME.obstacles = [];
