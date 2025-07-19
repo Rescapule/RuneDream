@@ -8,7 +8,6 @@
 </head>
 <body class="landing">
   <div id="landing">
-    <h1>RuneDream</h1>
     <div id="scores">
       <div id="normalScores" class="scoreTable">
         <h2>High Scores</h2>
@@ -24,6 +23,8 @@
       <img id="timeBtn" class="menu-button" src="button_timeattack.png" alt="Time Attack Mode">
       <img id="shopBtn" class="menu-button" src="button_upgradeshop.png" alt="Upgrade Shop">
       <img id="resetBtn" class="menu-button" src="button_resetprogress.png" alt="Reset Progress">
+      <img id="settingsBtn" class="menu-button" src="button_settings.png" alt="Settings">
+      <img id="exitBtn" class="menu-button" src="button_exitgame.png" alt="Exit Game">
     </div>
   </div>
   <script>
@@ -35,6 +36,12 @@
     });
     document.getElementById('shopBtn').addEventListener('click', () => {
       window.location.href = 'upgrade.html';
+    });
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      window.location.href = 'settings.html';
+    });
+    document.getElementById('exitBtn').addEventListener('click', () => {
+      window.close();
     });
     document.getElementById('resetBtn').addEventListener('click', () => {
       localStorage.setItem('coins', '0');

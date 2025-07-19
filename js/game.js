@@ -387,7 +387,10 @@ function update() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // background gradient
-  ctx.fillStyle = '#000';
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, '#89ABE3');
+  grad.addColorStop(1, '#F0F8FF');
+  ctx.fillStyle = grad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // ground
