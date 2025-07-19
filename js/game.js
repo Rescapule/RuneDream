@@ -17,15 +17,34 @@ const ASSETS = {
   plat: 'RuneDreamAssets/plat_clouds1.png',
   orange: 'RuneDreamAssets/Obs_orangestar.png',
   orangeBreak: 'RuneDreamAssets/Obs_orangestar_break.png',
-  black: 'RuneDreamAssets/Obs_blackstar.png'
+  black: 'RuneDreamAssets/Obs_blackstar.png',
+  yellow: 'Obs_yellowstar.png',
+  yellowBreak: [
+    'Obs_yellowstar_break1.png',
+    'Obs_yellowstar_break2.png',
+    'Obs_yellowstar_break3.png',
+    'Obs_yellowstar_break4.png'
+  ]
 };
 
 const images = {};
 let loaded = 0;
-let total = ASSETS.run.length + 5;
+let total = ASSETS.run.length + 6 + ASSETS.yellowBreak.length;
+
+const music = new Audio('song_Dreamy_Wisps.mp3');
+music.loop = true;
 
 function loadImages(cb) {
-  [...ASSETS.run, ASSETS.dash, ASSETS.plat, ASSETS.orange, ASSETS.orangeBreak, ASSETS.black].forEach(src => {
+  [
+    ...ASSETS.run,
+    ASSETS.dash,
+    ASSETS.plat,
+    ASSETS.orange,
+    ASSETS.orangeBreak,
+    ASSETS.black,
+    ASSETS.yellow,
+    ...ASSETS.yellowBreak
+  ].forEach(src => {
     const img = new Image();
     img.src = src;
     img.onload = () => {
@@ -117,7 +136,8 @@ const GAME = {
     maxHp: 1,
     lives: 0,
     maxLives: 0,
-    alive: true
+    alive: true,
+    respawning: false
   },
   ground: [],
   obstacles: [],
@@ -165,6 +185,8 @@ function init() {
   }
   window.addEventListener('keydown', handleInput);
   window.addEventListener('keyup', handleKeyUp);
+  music.currentTime = 0;
+  music.play();
   window.requestAnimationFrame(loop);
 }
 
@@ -230,9 +252,17 @@ function addGround(x, opts = {}) {
 }
 
 function addObstacleOnGround(g) {
-  const type = Math.random() < 0.2 ? 'black' : 'orange';
+  const r = Math.random();
+  let type;
+  if (r < 0.2) {
+    type = 'black';
+  } else if (r < 0.4) {
+    type = 'yellow';
+  } else {
+    type = 'orange';
+  }
   const offset = Math.random() * Math.max(0, g.width - 96);
-  GAME.obstacles.push({ x: g.x + offset, y: g.y - 96, type, hit: false, timer: 0 });
+  GAME.obstacles.push({ x: g.x + offset, y: g.y - 96, type, hit: false, timer: 0, frame: 0, total: 0 });
 }
 
 function respawnPlayer() {
@@ -246,16 +276,36 @@ function respawnPlayer() {
   GAME.player.dashBuffer = 0;
   GAME.player.dashY = GAME.player.y;
   GAME.player.alive = true;
+  GAME.player.respawning = false;
 }
 
 function loseLife(reason) {
   if (GAME.player.lives > 0) {
     GAME.player.lives--;
-    respawnPlayer();
+    GAME.player.alive = false;
+    GAME.player.respawning = true;
+    showRespawnCountdown();
   } else {
     GAME.player.alive = false;
     if (reason === 'obstacle') GAME.deathByObstacle = true;
   }
+}
+
+function showRespawnCountdown() {
+  const msg = document.getElementById('respawnMsg');
+  let count = 3;
+  msg.textContent = `Coming back in ${count}...`;
+  msg.style.display = 'flex';
+  const interval = setInterval(() => {
+    count--;
+    if (count > 0) {
+      msg.textContent = `Coming back in ${count}...`;
+    } else {
+      clearInterval(interval);
+      msg.style.display = 'none';
+      respawnPlayer();
+    }
+  }, 1000);
 }
 
 
@@ -311,6 +361,17 @@ function update() {
   // update obstacle timers and remove exploded ones
   GAME.obstacles = GAME.obstacles.filter(o => {
     if (o.hit) {
+      if (o.type === 'yellow') {
+        if (o.timer > 0) {
+          o.timer--;
+          o.frame = Math.min(
+            ASSETS.yellowBreak.length - 1,
+            Math.floor((o.total - o.timer) / 3)
+          );
+          return true;
+        }
+        return false;
+      }
       if (o.timer > 0) {
         o.timer--;
         return true;
@@ -338,7 +399,13 @@ function update() {
     const px = GAME.player.x;
     const py = GAME.player.y - GAME.player.height + 10;
     const playerImg = dashActive ? images[ASSETS.dash] : images[ASSETS.run[GAME.player.frame]];
-    const obsImg = images[o.type === 'orange' ? ASSETS.orange : ASSETS.black];
+    const obsImg = images[
+      o.type === 'orange'
+        ? ASSETS.orange
+        : o.type === 'yellow'
+        ? ASSETS.yellow
+        : ASSETS.black
+    ];
     const buffer = dashActive ? 0 : 10;
 
     const boxHit =
@@ -349,12 +416,21 @@ function update() {
 
     if (!boxHit) return;
 
-    if (o.type === 'orange' && dashActive) {
+    if (dashActive && (o.type === 'orange' || o.type === 'yellow')) {
       o.hit = true;
-      o.timer = 10;
-      GAME.player.coins += 5;
-      if (GAME.mode === 'time') {
-        GAME.timer += 15 * 60;
+      if (o.type === 'orange') {
+        o.timer = 10;
+        GAME.player.coins += 5;
+        if (GAME.mode === 'time') {
+          GAME.timer += 15 * 60;
+        }
+      } else if (o.type === 'yellow') {
+        o.timer = ASSETS.yellowBreak.length * 3;
+        o.total = o.timer;
+        GAME.player.coins += 5;
+        GAME.player.jumpCharges = GAME.player.maxJumpCharges;
+        GAME.player.dashCharges = GAME.player.maxDashCharges;
+        GAME.player.hp = GAME.player.maxHp;
       }
       localStorage.setItem('coins', GAME.player.coins);
       return;
@@ -364,21 +440,29 @@ function update() {
       if (GAME.player.hp > 1) {
         GAME.player.hp--;
         o.hit = true;
-        o.timer = o.type === 'orange' ? 10 : 0;
-      } else {
         if (o.type === 'orange') {
-          o.hit = true;
           o.timer = 10;
+        } else if (o.type === 'yellow') {
+          o.timer = ASSETS.yellowBreak.length * 3;
+          o.total = o.timer;
+        } else {
+          o.timer = 0;
+        }
+      } else {
+        if (o.type === 'orange' || o.type === 'yellow') {
+          o.hit = true;
+          o.timer = o.type === 'orange' ? 10 : ASSETS.yellowBreak.length * 3;
+          o.total = o.timer;
         }
         loseLife('obstacle');
       }
-      if ((o.type === 'orange' && !dashActive) || o.type === 'black') {
+      if ((o.type === 'orange' && !dashActive) || (o.type === 'yellow' && !dashActive) || o.type === 'black') {
         GAME.flashTimer = 10;
       }
     }
   });
 
-  if (!GAME.player.alive && !GAME.gameOverHandled) {
+  if (!GAME.player.alive && !GAME.player.respawning && !GAME.gameOverHandled) {
     GAME.gameOverHandled = true;
     setTimeout(gameOverPrompt, 50);
   }
@@ -400,11 +484,25 @@ function draw() {
 
   // obstacles
   GAME.obstacles.forEach(o => {
-    if (o.hit && o.type === 'orange') {
-      ctx.drawImage(images[ASSETS.orangeBreak], o.x, o.y, 96, 96);
+    let img;
+    if (o.hit) {
+      if (o.type === 'orange') {
+        img = ASSETS.orangeBreak;
+      } else if (o.type === 'yellow') {
+        img = ASSETS.yellowBreak[o.frame];
+      } else {
+        img = ASSETS.black;
+      }
     } else {
-      ctx.drawImage(images[o.type === 'orange' ? ASSETS.orange : ASSETS.black], o.x, o.y, 96, 96);
+      if (o.type === 'orange') {
+        img = ASSETS.orange;
+      } else if (o.type === 'yellow') {
+        img = ASSETS.yellow;
+      } else {
+        img = ASSETS.black;
+      }
     }
+    ctx.drawImage(images[img], o.x, o.y, 96, 96);
   });
 
   // player
@@ -474,6 +572,8 @@ function restart() {
   GAME.player.dashBuffer = 0;
   GAME.ground = [];
   GAME.obstacles = [];
+  music.currentTime = 0;
+  music.play();
   let x = 0;
   const first = addGround(x, { width: canvas.width, gap: 40, y: canvas.height - 200 });
   x = first.x + first.width + first.gap;
