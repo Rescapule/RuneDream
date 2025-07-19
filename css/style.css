@@ -24,8 +24,7 @@ body.game {
 #startBtn,
 #playBtn,
 #shopBtn,
-#backBtn,
-#returnBtn {
+#backBtn {
   padding: 10px 20px;
   font-size: 24px;
   cursor: pointer;
@@ -61,7 +60,7 @@ body.game {
 
 #gameCanvas {
   display: block;
-  background: #000;
+  background: #d0e0ff;
   transform: scale(1.2);
   transform-origin: center;
   width: 100%;
@@ -94,14 +93,15 @@ body.game {
 #scores {
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   margin-bottom: 20px;
 }
 
 .scoreTable {
-  width: 45%;
+  width: 15%;
   background: rgba(255,255,255,0.5);
   padding: 10px;
+  margin-right: 10px;
 }
 
 #gameOver {
