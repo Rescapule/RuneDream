@@ -31,6 +31,8 @@ const images = {};
 let loaded = 0;
 let total = ASSETS.run.length + 6 + ASSETS.yellowBreak.length;
 
+const DRAW_OFFSET = 35; // lower sprite to compensate for transparent padding
+
 const music = new Audio('song_Dreamy_Wisps.mp3');
 music.loop = true;
 
@@ -439,7 +441,7 @@ function update() {
     if (o.hit) return;
     const dashActive = GAME.player.dash > 0 || GAME.player.dashBuffer > 0;
     const px = GAME.player.x;
-    const py = GAME.player.y - GAME.player.height + 20;
+    const py = GAME.player.y - GAME.player.height + DRAW_OFFSET;
     const playerImg = dashActive ? images[ASSETS.dash] : images[ASSETS.run[GAME.player.frame]];
     const obsImg = images[
       o.type === 'orange'
@@ -561,13 +563,13 @@ function draw() {
   }
   if (GAME.player.dash > 0) {
     ctx.save();
-    ctx.translate(GAME.player.x + GAME.player.width, GAME.player.y - GAME.player.height + 20);
+    ctx.translate(GAME.player.x + GAME.player.width, GAME.player.y - GAME.player.height + DRAW_OFFSET);
     ctx.scale(-1, 1);
     ctx.drawImage(sprite, 0, 0, GAME.player.width, GAME.player.height);
     ctx.restore();
   } else {
     ctx.save();
-    ctx.translate(GAME.player.x + GAME.player.width, GAME.player.y - GAME.player.height + 20);
+    ctx.translate(GAME.player.x + GAME.player.width, GAME.player.y - GAME.player.height + DRAW_OFFSET);
     ctx.scale(-1, 1);
     ctx.drawImage(sprite, 0, 0, GAME.player.width, GAME.player.height);
     ctx.restore();

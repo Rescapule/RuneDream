@@ -56,9 +56,10 @@ body.game {
 
 #gameContainer {
   position: relative;
-  width: 800px;
-  height: 450px;
-  margin: 20px auto;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
 }
 
 #gameCanvas {
