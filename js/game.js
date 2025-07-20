@@ -108,12 +108,14 @@ const INPUT = {
   jumpHeld: false
 };
 
+const BASE_SPEED = 4;
 const GAME = {
-  speed: 4,
+  speed: BASE_SPEED,
   gravity: 0.5,
   mode: 'normal',
   timer: 0,
   flashTimer: 0,
+  difficultyLevel: 0,
   player: {
     x: 100,
     y: 0,
@@ -150,6 +152,8 @@ function init() {
   const container = document.getElementById('gameContainer');
   canvas.width = container.clientWidth;
   canvas.height = container.clientHeight;
+  GAME.difficultyLevel = 0;
+  GAME.speed = BASE_SPEED;
   GAME.player.coins = parseInt(localStorage.getItem('coins') || '0');
   GAME.player.maxJumpCharges = 2 + parseInt(localStorage.getItem('jumpLevel') || '0');
   GAME.player.maxDashCharges = 2 + parseInt(localStorage.getItem('dashLevel') || '0');
@@ -186,7 +190,7 @@ function init() {
   window.addEventListener('keydown', handleInput);
   window.addEventListener('keyup', handleKeyUp);
   music.currentTime = 0;
-  music.play();
+  music.play().catch(() => {});
   window.requestAnimationFrame(loop);
 }
 
@@ -233,7 +237,9 @@ function onGround() {
 function addGround(x, opts = {}) {
   const rungs = [canvas.height - 80, canvas.height - 200, canvas.height - 320];
   const width = opts.width || 240 + Math.random() * 120;
-  const gap = opts.gap !== undefined ? opts.gap : 80 + Math.random() * 80;
+  const gap = opts.gap !== undefined
+    ? opts.gap
+    : 80 + Math.random() * 80 + GAME.difficultyLevel * 5;
   let y;
   if (opts.y !== undefined) {
     y = opts.y;
@@ -253,10 +259,11 @@ function addGround(x, opts = {}) {
 
 function addObstacleOnGround(g) {
   const r = Math.random();
+  const blackChance = Math.min(0.2 + GAME.difficultyLevel * 0.05, 0.8);
   let type;
-  if (r < 0.2) {
+  if (r < blackChance) {
     type = 'black';
-  } else if (r < 0.4) {
+  } else if (r < blackChance + 0.2) {
     type = 'yellow';
   } else {
     type = 'orange';
@@ -311,6 +318,11 @@ function showRespawnCountdown() {
 
 function update() {
   if (!GAME.player.alive) return;
+  const level = Math.floor(GAME.distance / 5000);
+  if (level > GAME.difficultyLevel) {
+    GAME.difficultyLevel = level;
+    GAME.speed = BASE_SPEED + GAME.difficultyLevel * 0.5;
+  }
   if (GAME.mode === 'time') {
     GAME.timer--;
     if (GAME.timer <= 0) {
@@ -554,6 +566,8 @@ function restart() {
   GAME.gameOverHandled = false;
   GAME.deathByObstacle = false;
   GAME.distance = 0;
+  GAME.difficultyLevel = 0;
+  GAME.speed = BASE_SPEED;
   GAME.player.coins = parseInt(localStorage.getItem('coins') || '0');
   GAME.player.maxJumpCharges = 2 + parseInt(localStorage.getItem('jumpLevel') || '0');
   GAME.player.maxDashCharges = 2 + parseInt(localStorage.getItem('dashLevel') || '0');
@@ -573,7 +587,7 @@ function restart() {
   GAME.ground = [];
   GAME.obstacles = [];
   music.currentTime = 0;
-  music.play();
+  music.play().catch(() => {});
   let x = 0;
   const first = addGround(x, { width: canvas.width, gap: 40, y: canvas.height - 200 });
   x = first.x + first.width + first.gap;

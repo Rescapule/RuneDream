@@ -47,8 +47,8 @@ body.game {
 }
 
 #buttonCluster .menu-button {
-  width: 180px;
-  margin: 2px 0;
+  width: 160px;
+  margin: 1px 0;
 }
 
 #gameContainer {
@@ -60,7 +60,7 @@ body.game {
 
 #gameCanvas {
   display: block;
-  background: #d0e0ff;
+  background: url("../Blank Screen.png") center/cover no-repeat;
   transform: scale(1.2);
   transform-origin: center;
   width: 100%;
@@ -91,17 +91,20 @@ body.game {
 }
 
 #scores {
-  width: 100%;
+  position: absolute;
+  top: 10px;
+  left: 10px;
   display: flex;
-  justify-content: flex-start;
+  flex-direction: column;
+  align-items: flex-start;
   margin-bottom: 20px;
 }
 
 .scoreTable {
-  width: 15%;
+  width: 150px;
   background: rgba(255,255,255,0.5);
   padding: 10px;
-  margin-right: 10px;
+  margin-bottom: 10px;
 }
 
 #gameOver {
