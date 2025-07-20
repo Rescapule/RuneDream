@@ -165,7 +165,7 @@ function init() {
   GAME.player.dashDuration = 25 + 5 * parseInt(localStorage.getItem('dashDurationLevel') || '0');
   GAME.player.hp = GAME.player.maxHp;
   coinsEl.textContent = GAME.player.coins;
-  GAME.player.y = canvas.height - 210;
+  GAME.player.y = canvas.height - 220;
   GAME.player.dashY = GAME.player.y;
   GAME.deathByObstacle = false;
   gameOverEl.style.display = 'none';
@@ -261,7 +261,7 @@ function getGroundLevel(px) {
 }
 
 function onGround() {
-  return GAME.player.y >= getGroundLevel(GAME.player.x + GAME.player.width / 2) - 10;
+  return GAME.player.y >= getGroundLevel(GAME.player.x + GAME.player.width / 2) - 20;
 }
 
 function addGround(x, opts = {}) {
@@ -383,7 +383,7 @@ function update() {
     const prevY = GAME.player.y;
     GAME.player.vy += GAME.gravity;
     GAME.player.y += GAME.player.vy;
-    const groundLevel = getGroundLevel(GAME.player.x + GAME.player.width / 2) - 10;
+    const groundLevel = getGroundLevel(GAME.player.x + GAME.player.width / 2) - 20;
     if (GAME.player.vy >= 0 && prevY <= groundLevel && GAME.player.y >= groundLevel) {
       GAME.player.y = groundLevel;
       GAME.player.vy = 0;
@@ -392,7 +392,7 @@ function update() {
     }
   }
 
-  if (GAME.player.y + 10 > canvas.height) {
+  if (GAME.player.y + 20 > canvas.height) {
     loseLife('fall');
   }
 
@@ -439,7 +439,7 @@ function update() {
     if (o.hit) return;
     const dashActive = GAME.player.dash > 0 || GAME.player.dashBuffer > 0;
     const px = GAME.player.x;
-    const py = GAME.player.y - GAME.player.height + 10;
+    const py = GAME.player.y - GAME.player.height + 20;
     const playerImg = dashActive ? images[ASSETS.dash] : images[ASSETS.run[GAME.player.frame]];
     const obsImg = images[
       o.type === 'orange'
@@ -561,13 +561,13 @@ function draw() {
   }
   if (GAME.player.dash > 0) {
     ctx.save();
-    ctx.translate(GAME.player.x + GAME.player.width, GAME.player.y - GAME.player.height + 10);
+    ctx.translate(GAME.player.x + GAME.player.width, GAME.player.y - GAME.player.height + 20);
     ctx.scale(-1, 1);
     ctx.drawImage(sprite, 0, 0, GAME.player.width, GAME.player.height);
     ctx.restore();
   } else {
     ctx.save();
-    ctx.translate(GAME.player.x + GAME.player.width, GAME.player.y - GAME.player.height + 10);
+    ctx.translate(GAME.player.x + GAME.player.width, GAME.player.y - GAME.player.height + 20);
     ctx.scale(-1, 1);
     ctx.drawImage(sprite, 0, 0, GAME.player.width, GAME.player.height);
     ctx.restore();
@@ -627,7 +627,7 @@ function restart() {
     const last = GAME.ground[GAME.ground.length-1];
     x = last.x + last.width + last.gap;
   }
-  GAME.player.y = getGroundLevel(GAME.player.x) - 10;
+  GAME.player.y = getGroundLevel(GAME.player.x) - 20;
   GAME.player.dashY = GAME.player.y;
   gameOverEl.style.display = 'none';
   if (GAME.mode === 'time') {
