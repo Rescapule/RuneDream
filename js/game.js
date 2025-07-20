@@ -189,6 +189,8 @@ function init() {
   }
   window.addEventListener('keydown', handleInput);
   window.addEventListener('keyup', handleKeyUp);
+  canvas.addEventListener('touchstart', handleTouchStart, {passive:false});
+  canvas.addEventListener('touchend', handleTouchEnd);
   music.currentTime = 0;
   music.play().catch(() => {});
   window.requestAnimationFrame(loop);
@@ -218,6 +220,34 @@ function handleKeyUp(e) {
     if (GAME.player.vy < -4) {
       GAME.player.vy = -4;
     }
+  }
+}
+
+function handleTouchStart(e) {
+  e.preventDefault();
+  if (!GAME.player.alive) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.touches[0].clientX - rect.left;
+  if (x < rect.width / 2) {
+    if (GAME.player.jumpCharges > 0) {
+      GAME.player.vy = -GAME.player.jumpStrength;
+      GAME.player.jumpCharges--;
+    }
+    INPUT.jumpHeld = true;
+  } else {
+    if (GAME.player.dash <= 0 && GAME.player.dashCharges > 0) {
+      GAME.player.dash = GAME.player.dashDuration;
+      GAME.player.dashCharges--;
+      GAME.player.dashY = GAME.player.y;
+      GAME.player.vy = 0;
+    }
+  }
+}
+
+function handleTouchEnd() {
+  INPUT.jumpHeld = false;
+  if (GAME.player.vy < -4) {
+    GAME.player.vy = -4;
   }
 }
 

@@ -1,0 +1,21 @@
+{
+  "name": "RuneDream",
+  "short_name": "RuneDream",
+  "start_url": "index.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#89ABE3",
+  "theme_color": "#89ABE3",
+  "icons": [
+    {
+      "src": "Obs_orangestar.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "Obs_orangestar.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
